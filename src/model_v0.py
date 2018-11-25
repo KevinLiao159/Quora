@@ -62,13 +62,17 @@ def tokenizer(text):
     return nlp.tokenize(text, remove_punct=True)
 
 
-def transform(df_text, tfidf=True):
+def transform(df_text, tfidf=True, stop_words='english'):
     """
     transform and extract features from raw text dataframe
 
     Parameters
     ----------
     df_text: dataframe, single column with text
+
+    tfidf: boolean, enable inverse-document-frequency reweighting
+
+    stop_words: string {‘english’}, list, or None (default)
 
     Return
     ------
@@ -80,13 +84,15 @@ def transform(df_text, tfidf=True):
             tokenizer=tokenizer,
             min_df=3, max_df=0.9,
             strip_accents='unicode',
-            use_idf=1, smooth_idf=1,
-            sublinear_tf=1)
+            use_idf=True, smooth_idf=True,
+            sublinear_tf=True,
+            stop_words=stop_words)
     else:
         vectorizer = CountVectorizer(
             ngram_range=(1, 2),
             tokenizer=tokenizer,
             min_df=3, max_df=0.9,
             strip_accents='unicode',
-            binary=True)
+            binary=True,
+            stop_words=stop_words)
     return vectorizer.fit_transform(df_text)

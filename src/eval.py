@@ -20,7 +20,7 @@ def load_and_preprocess(datapath, module):
 
     Returns
     -------
-    df_train, df_test: dataframe with raw text
+    df_train: dataframe with raw text
 
     X_train: train data with proper features for model
     """
