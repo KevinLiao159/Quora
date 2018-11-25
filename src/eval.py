@@ -29,20 +29,11 @@ def load_and_preprocess(datapath, module):
     t0 = time.time()
     print("Loading data")
     df_train = pd.read_csv(os.path.join(datapath, "train.csv"))
-    df_test = pd.read_csv(os.path.join(datapath, "test.csv"))
-    train_test_cut = df_train.shape[0]
     print("Train shape : ", df_train.shape)
-    print("Test shape : ", df_test.shape)
-    # concat text data into single dataframe
-    df_all = pd.concat(
-        [df_train[['question_text']], df_test[['question_text']]],
-        axis=0).reset_index(drop=True)
     # transform
-    X_features = module.transform(df_all['question_text'])
-    X_train = X_features[:train_test_cut]
-    X_test = X_features[train_test_cut:]
+    X_train = module.transform(df_train['question_text'])
     print('Preping took {:.2f}'.format(time.time() - t0))
-    return X_train, X_test
+    return df_train, X_train
 
 
 def train_and_eval(X_train, y_train, X_val, y_val, module):
@@ -109,7 +100,7 @@ if __name__ == '__main__':
     # 1. import module
     module = __import__(model)
     # 2. load and preprocess data
-    df_train, df_test, X_train, X_test = load_and_preprocess(datapath, module)
+    df_train, X_train = load_and_preprocess(datapath, module)
     # 3. train and eval
     if cv == 2:
         X_t, X_v, y_t, y_v = train_test_split(
