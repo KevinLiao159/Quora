@@ -1,3 +1,4 @@
+envdir>=1.0.1
 tqdm>=4.23.4
 unicodecsv>=0.14.1
 nltk>=3.3

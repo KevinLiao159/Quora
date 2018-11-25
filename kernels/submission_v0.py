@@ -37,7 +37,7 @@ def remove_punctuation(text):
     """
     remove punctuation from text
     """
-    re_tok = re.compile(r'[^\w\s]')
+    re_tok = re.compile(f'([{string.punctuation}])')
     return re_tok.sub(' ', text)
 
 
@@ -103,7 +103,8 @@ def tokenize(text, remove_punct=False):
     return tokens
 
 
-def tokenizer(x): return tokenize(x, remove_punct=True)
+def tokenizer(text):
+    return tokenize(text, remove_punct=False)
 
 
 """
@@ -115,7 +116,7 @@ class NbSvmClassifier(BaseEstimator, ClassifierMixin):
     """
     Naive Bayes - Support Vector Machine
     """
-    def __init__(self, C=4.0, dual=True, n_jobs=-1):
+    def __init__(self, C=0.8, dual=True, n_jobs=-1):
         self.C = C
         self.dual = dual
         self.n_jobs = n_jobs
@@ -153,7 +154,7 @@ def get_model():
     return NbSvmClassifier()
 
 
-def transform(df_text, tfidf=True, stop_words='english'):
+def transform(df_text, tfidf=True, stop_words=None):
     """
     transform and extract features from raw text dataframe
 
@@ -171,7 +172,7 @@ def transform(df_text, tfidf=True, stop_words='english'):
     """
     if tfidf:
         vectorizer = TfidfVectorizer(
-            ngram_range=(1, 2),
+            ngram_range=(1, 3),
             tokenizer=tokenizer,
             min_df=3, max_df=0.9,
             strip_accents='unicode',
@@ -180,7 +181,7 @@ def transform(df_text, tfidf=True, stop_words='english'):
             stop_words=stop_words)
     else:
         vectorizer = CountVectorizer(
-            ngram_range=(1, 2),
+            ngram_range=(1, 3),
             tokenizer=tokenizer,
             min_df=3, max_df=0.9,
             strip_accents='unicode',
@@ -264,7 +265,7 @@ if __name__ == '__main__':
     # config
     # SHUFFLE = True
     DATA_PATH = '../input/'
-    THRES = 0.21
+    THRES = 0.20
 
     t0 = time.time()
     # 1. load and preprocess data

@@ -28,7 +28,7 @@ def remove_punctuation(text):
     """
     remove punctuation from text
     """
-    re_tok = re.compile(r'[^\w\s]')
+    re_tok = re.compile(f'([{string.punctuation}])')
     return re_tok.sub(' ', text)
 
 
