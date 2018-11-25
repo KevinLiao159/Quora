@@ -1,7 +1,7 @@
 <h1 align="center"> Kaggle Competition: Quora Insincere Questions Classification </h1> <br>
 <p align="center">
   <a href="https://github.com/KevinLiao159/Quora">
-    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="http://www.chiranjeevivegi.com/Toxic-Comment-Challenge/img_gh/word_cloud.png" width="600" height="300">
+    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="http://www.chiranjeevivegi.com/Toxic-Comment-Challenge/img_gh/word_cloud.png">
   </a>
 </p>
 
