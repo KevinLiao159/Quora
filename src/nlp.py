@@ -122,11 +122,7 @@ def stemming(tokens):
     """
     stem tokens
     """
-    try:
-        porter = nltk.PorterStemmer()
-    except LookupError:
-        nltk.download()
-        porter = nltk.PorterStemmer()
+    porter = nltk.PorterStemmer()
     return [porter.stem(t) for t in tokens]
 
 
