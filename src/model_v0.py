@@ -33,7 +33,7 @@ class NbSvmClassifier(BaseEstimator, ClassifierMixin):
     def predict_proba(self, X):
         # Verify that model has been fit
         check_is_fitted(self, ['_r', '_clf'])
-        return self._clf.predict_proba(X.multiply(self._r))
+        return self._clf.predict_proba(X.multiply(self._r))[:, 1]
 
     def fit(self, X, y):
         # Check that X and y have correct shape

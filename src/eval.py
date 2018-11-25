@@ -14,7 +14,7 @@ def load_and_preprocess(datapath, module):
 
     Parameters
     ----------
-    datapath: str, data directory that contains train.csv and test.csv
+    datapath: str, data directory that contains train.csv
 
     module: a python module
 
@@ -22,17 +22,15 @@ def load_and_preprocess(datapath, module):
     -------
     df_train, df_test: dataframe with raw text
 
-    train: train data with proper features for model
-
-    test: test data with proper features for model
+    X_train: train data with proper features for model
     """
     t0 = time.time()
     print("Loading data")
     df_train = pd.read_csv(os.path.join(datapath, "train.csv"))
-    print("Train shape : ", df_train.shape)
+    print("Train data with shape : ", df_train.shape)
     # transform
     X_train = module.transform(df_train['question_text'])
-    print('Preping took {:.2f}'.format(time.time() - t0))
+    print('Load and preprocessing took {:.2f}s'.format(time.time() - t0))
     return df_train, X_train
 
 
@@ -50,19 +48,22 @@ def train_and_eval(X_train, y_train, X_val, y_val, module):
     Return
     ------
     best_thres: float
+
+    df_score: dataframe with thres and f1 score
     """
     # get model
     model = module.get_model()
     # train model
     print('Start to train model')
     model = model.fit(X_train, y_train)
-    # predict
-    print('Start to predict')
-    y_pred = model.predict(X_val)
+    # predict probas
+    print('Start to predict probas')
+    y_proba = model.predict_proba(X_val)
     # score
     scores = {}
     for thres in np.arange(0, 0.51, 0.01):
-        scores[thres] = metrics.f1_score(y_val, (y_pred > thres).astype(int))
+        thres = round(thres, 2)
+        scores[thres] = metrics.f1_score(y_val, (y_proba > thres).astype(int))
         print("Val F1 Score: {:.4f} with Threshold at {}".format(scores[thres], thres)) # noqa
     # get max
     best_thres, best_score = max(scores.items(), key=operator.itemgetter(1))
@@ -76,7 +77,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog="Quora Insincere Questions Classification",
         description="Run Model Evaluation and Create Submission")
-    parser.add_argument('--datapath', nargs='?', default='../data/',
+    parser.add_argument('--datapath', nargs='?', default=os.environ['DATA_PATH'],   # noqa
                         help='input data path')
     parser.add_argument('--model', nargs='?', default='model_v0',
                         help='model version')
@@ -110,7 +111,7 @@ if __name__ == '__main__':
         best_thres, df_score = train_and_eval(X_t, y_t, X_v, y_v, module)
         filepath = os.path.join(datapath, model + '.csv')
         df_score.to_csv(filepath)
-        print('Save CV score file to {}.csv'.format(filepath))
+        print('Save CV score file to {}'.format(filepath))
     else:
         cv_strat = StratifiedKFold(
             n_splits=cv, shuffle=SHUFFLE, random_state=RANDOM_STATE)
@@ -127,5 +128,5 @@ if __name__ == '__main__':
         best_thres = round(np.mean(avg_thres), 2)
         filepath = os.path.join(datapath, model + '.csv')
         pd.concat(score_dfs, axis=1).to_csv(filepath)
-        print('Save CV score file to {}.csv'.format(filepath))
-    print('All done and it took {:.2f}'.format(time.time() - t0))
+        print('Save CV score file to {}'.format(filepath))
+    print('All done and it took {:.2f}s'.format(time.time() - t0))
