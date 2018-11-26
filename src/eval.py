@@ -10,7 +10,7 @@ from sklearn import metrics
 
 def train_and_eval(X_train, y_train, X_val, y_val, module):
     """
-    
+
     """
 
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     # 2. load and preprocess data
     df_train, X_train = load_and_preprocess(datapath, module)
     # 3. train and eval
-
+    # TODO;
     # 4. fit and eval
     if cv == 2:
         X_t, X_v, y_t, y_v = train_test_split(
