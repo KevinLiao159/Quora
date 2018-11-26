@@ -1,5 +1,5 @@
 """
-baseline model:
+model v0: baseline linear model
 NBSVM (Naive Bayes - Support Vector Machine)
 Youtube link: https://www.youtube.com/watch?v=37sFIak42Sc&feature=youtu.be&t=3745   # noqa
 
@@ -137,7 +137,7 @@ def count_transform(df_text, stop_words=None, add_char=False):
     return vectorizer.fit_transform(df_text)
 
 
-def transform(df_text, tfidf=True, stop_words=None, add_char=False):
+def transform(df_text, tfidf=True, stop_words=None, add_char=True):
     """
     transform and extract features from raw text dataframe
 
