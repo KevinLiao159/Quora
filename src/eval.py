@@ -8,6 +8,12 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn import metrics
 
 
+def train_and_eval(X_train, y_train, X_val, y_val, module):
+    """
+    
+    """
+
+
 def load_and_preprocess(datapath, module):
     """
     load and preprocess
@@ -34,7 +40,7 @@ def load_and_preprocess(datapath, module):
     return df_train, X_train
 
 
-def train_and_eval(X_train, y_train, X_val, y_val, module):
+def fit_and_eval(X_train, y_train, X_val, y_val, module):
     """
     train model and eval hold-out performance
     BTW, write scores to csv files
@@ -103,12 +109,14 @@ if __name__ == '__main__':
     # 2. load and preprocess data
     df_train, X_train = load_and_preprocess(datapath, module)
     # 3. train and eval
+
+    # 4. fit and eval
     if cv == 2:
         X_t, X_v, y_t, y_v = train_test_split(
             X_train, df_train.target,
             test_size=TEST_SIZE, random_state=RANDOM_STATE,
             shuffle=SHUFFLE, stratify=df_train.target)
-        best_thres, df_score = train_and_eval(X_t, y_t, X_v, y_v, module)
+        best_thres, df_score = fit_and_eval(X_t, y_t, X_v, y_v, module)
         filepath = os.path.join(datapath, model + '.csv')
         df_score.to_csv(filepath)
         print('Save CV score file to {}'.format(filepath))
@@ -122,7 +130,7 @@ if __name__ == '__main__':
             y_t = df_train.target[idx_train]
             X_v = X_train[idx_val]
             y_v = df_train.target[idx_val]
-            best_thres, df_score = train_and_eval(X_t, y_t, X_v, y_v, module)
+            best_thres, df_score = fit_and_eval(X_t, y_t, X_v, y_v, module)
             avg_thres += best_thres
             score_dfs.append(df_score)
         best_thres = round(np.mean(avg_thres), 2)
