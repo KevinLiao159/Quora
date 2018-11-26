@@ -71,9 +71,9 @@ def clean_numbers(text):
     return text
 
 
-def tokenize(text, remove_punct=False):
+def preprocess(text, remove_punct=False):
     """
-    tokenize text into list of tokens
+    preprocess text into clean text for tokenization
     """
     # 1. normalize
     text = normalize_unicode(text)
@@ -89,7 +89,16 @@ def tokenize(text, remove_punct=False):
     text = decontracted(text)
     # 5. clean number
     text = clean_numbers(text)
-    # 6. tokenize
+    return text
+
+
+def tokenize(text, remove_punct=False):
+    """
+    tokenize text into list of tokens
+    """
+    # 1. preprocess
+    text = preprocess(text, remove_punct)
+    # 2. tokenize
     tokens = text.split()
     return tokens
 

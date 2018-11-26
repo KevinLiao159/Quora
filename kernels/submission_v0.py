@@ -7,10 +7,11 @@ import pandas as pd
 
 import numpy as np
 from scipy import sparse
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_union
 
 
 """
@@ -80,9 +81,9 @@ def clean_numbers(text):
     return text
 
 
-def tokenize(text, remove_punct=False):
+def preprocess(text, remove_punct=False):
     """
-    tokenize text into list of tokens
+    preprocess text into clean text for tokenization
     """
     # 1. normalize
     text = normalize_unicode(text)
@@ -98,9 +99,22 @@ def tokenize(text, remove_punct=False):
     text = decontracted(text)
     # 5. clean number
     text = clean_numbers(text)
-    # 6. tokenize
+    return text
+
+
+def tokenize(text, remove_punct=False):
+    """
+    tokenize text into list of tokens
+    """
+    # 1. preprocess
+    text = preprocess(text, remove_punct)
+    # 2. tokenize
     tokens = text.split()
     return tokens
+
+
+def preprocessor(text):
+    return preprocess(text, remove_punct=False)
 
 
 def tokenizer(text):
@@ -154,39 +168,38 @@ def get_model():
     return NbSvmClassifier()
 
 
-def transform(df_text, tfidf=True, stop_words=None):
+def transform(df_text, stop_words=None, add_char=True):
     """
-    transform and extract features from raw text dataframe
+    Tf-idf transform and extract features from raw text dataframe
 
     Parameters
     ----------
     df_text: dataframe, single column with text
 
-    tfidf: boolean, enable inverse-document-frequency reweighting
-
     stop_words: string {‘english’}, list, or None (default)
+
+    add_char: bool, add n-grams char features
 
     Return
     ------
     df_features
     """
-    if tfidf:
-        vectorizer = TfidfVectorizer(
-            ngram_range=(1, 3),
-            tokenizer=tokenizer,
-            min_df=3, max_df=0.9,
+    vectorizer = TfidfVectorizer(
+        strip_accents='unicode',
+        ngram_range=(1, 3),
+        tokenizer=tokenizer, analyzer='word',
+        min_df=3, max_df=0.9, max_features=None,
+        use_idf=True, smooth_idf=True, sublinear_tf=True,
+        stop_words=stop_words)
+    if add_char:
+        char_vectorizer = TfidfVectorizer(
             strip_accents='unicode',
-            use_idf=True, smooth_idf=True,
-            sublinear_tf=True,
-            stop_words=stop_words)
-    else:
-        vectorizer = CountVectorizer(
             ngram_range=(1, 3),
-            tokenizer=tokenizer,
-            min_df=3, max_df=0.9,
-            strip_accents='unicode',
-            binary=True,
+            preprocessor=preprocessor, analyzer='char',
+            min_df=3, max_df=0.9, max_features=None,
+            use_idf=True, smooth_idf=True, sublinear_tf=True,
             stop_words=stop_words)
+        vectorizer = make_union(vectorizer, char_vectorizer, n_jobs=2)
     return vectorizer.fit_transform(df_text)
 
 
