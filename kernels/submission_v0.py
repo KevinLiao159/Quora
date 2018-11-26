@@ -278,7 +278,7 @@ if __name__ == '__main__':
     # config
     # SHUFFLE = True
     DATA_PATH = '../input/'
-    THRES = 0.20
+    THRES = 0.24
 
     t0 = time.time()
     # 1. load and preprocess data
