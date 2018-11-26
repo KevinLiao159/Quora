@@ -199,7 +199,7 @@ def transform(df_text, stop_words=None, add_char=True):
             min_df=3, max_df=0.9, max_features=None,
             use_idf=True, smooth_idf=True, sublinear_tf=True,
             stop_words=stop_words)
-        vectorizer = make_union(vectorizer, char_vectorizer, n_jobs=2)
+        vectorizer = make_union(vectorizer, char_vectorizer)
     return vectorizer.fit_transform(df_text)
 
 

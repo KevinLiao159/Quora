@@ -101,3 +101,14 @@ model_4: concat embeddeding weights (weights from v2, FastTest, Glove) + NN
 model_5: ensemble
 
 model_6: ensemble and PL
+
+
+
+## Kernals
+https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings
+
+https://www.kaggle.com/sudalairajkumar/a-look-at-different-embeddings
+
+https://www.kaggle.com/thebrownviking20/analyzing-quora-for-the-insinceres
+
+https://www.kaggle.com/mjbahmani/a-data-science-framework-for-quora
