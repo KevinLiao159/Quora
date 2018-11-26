@@ -1,5 +1,5 @@
 """
-baseline model:
+model v0: baseline linear model
 NBSVM (Naive Bayes - Support Vector Machine)
 Youtube link: https://www.youtube.com/watch?v=37sFIak42Sc&feature=youtu.be&t=3745   # noqa
 
