@@ -9,3 +9,4 @@ envdir
 
 # data
 data
+*.csv
