@@ -137,7 +137,7 @@ def count_transform(df_text, stop_words=None, add_char=False):
     return vectorizer.fit_transform(df_text)
 
 
-def transform(df_text, tfidf=True, stop_words=None, add_char=False):
+def transform(df_text, tfidf=True, stop_words=None, add_char=True):
     """
     transform and extract features from raw text dataframe
 
