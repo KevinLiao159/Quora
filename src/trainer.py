@@ -2,7 +2,7 @@ import os
 import time
 import argparse
 # import pandas as pd
-from eval_f1 import load_and_preprocess
+from eval import load_and_preprocess
 from sklearn.model_selection import train_test_split
 
 

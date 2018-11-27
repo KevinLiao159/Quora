@@ -154,22 +154,22 @@ def get_model():
     params = {
         'boosting_type': 'gbdt',
         'objective': 'binary',
-        'learning_rate': 0.03,
-        'num_leaves': 32,
-        'max_depth': 6,
+        'learning_rate': 0.3,
+        'num_leaves': 12,
+        'max_depth': 2,
         'min_split_gain': 0,
         'subsample': 0.9,
         'subsample_freq': 1,
         'colsample_bytree': 0.9,
-        'min_child_samples': 100,
+        'min_child_samples': 1000,
         'min_child_weight': 0,
         'max_bin': 100,
         'subsample_for_bin': 200000,
         'reg_alpha': 0,
         'reg_lambda': 0,
-        'scale_pos_weight': 10,
+        'scale_pos_weight': 5,
         'metric': 'auc',
-        'nthread': 22,
+        'nthread': 2,
         'verbose': 0
     }
     return LightgbmClassifier(params)
