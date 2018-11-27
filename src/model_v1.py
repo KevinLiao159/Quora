@@ -71,7 +71,7 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
 
     def train(self, X_train, y_train, X_val, y_val,
               num_boost_round=100,
-              early_stopping_rounds=None,
+              early_stopping_rounds=20,
               verbose_eval=True):
         """
         train lightgbm and monitor the best iteration with validation

@@ -8,12 +8,6 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn import metrics
 
 
-def train_and_eval(X_train, y_train, X_val, y_val, module):
-    """
-
-    """
-
-
 def load_and_preprocess(datapath, module):
     """
     load and preprocess
