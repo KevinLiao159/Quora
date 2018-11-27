@@ -31,9 +31,9 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
         categorical_feature: list of strings or int, or 'auto',
             optional (default="auto")
         """
-        self.params = self.params
+        self.params = params
         self.feature_name = feature_name
-        self.categorical_feature = self.categorical_feature
+        self.categorical_feature = categorical_feature
 
     def predict(self, X, num_iteration=None):
         # Verify that model has been fit
@@ -88,22 +88,18 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
             validation score stops improving
 
         verbose_eval: bool or int, optional (default=True)
+
+        Return
+        ------
+        self
         """
         # Check that X and y have correct shape
         y_train, y_val = y_train.values, y_val.values
         X_train, y_train = check_X_y(X_train, y_train, accept_sparse=True)
         X_val, y_val = check_X_y(X_val, y_val, accept_sparse=True)
         # prep datasets
-        train_set = self.get_dataset(
-            X_train, y_train,
-            feature_name=self.feature_name,
-            categorical_feature=self.categorical_feature,
-            free_raw_data=True)
-        valid_set = self.get_dataset(
-            X_val, y_val,
-            feature_name=self.feature_name,
-            categorical_feature=self.categorical_feature,
-            free_raw_data=True)
+        train_set = self.get_dataset(X_train, y_train, free_raw_data=True)
+        valid_set = self.get_dataset(X_val, y_val, free_raw_data=True)
         del X_train, y_train, X_val, y_val
         gc.collect()
         # train
@@ -117,6 +113,7 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
             feature_name=self.feature_name,
             categorical_feature=self.categorical_feature,
             verbose_eval=verbose_eval)
+        return self
 
     def fit(self, X, y,
             best_iteration=100):
@@ -129,16 +126,16 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
 
         best_iteration: int, optional (default=100),
             number of boosting iterations
+
+        Return
+        ------
+        self
         """
         # Check that X and y have correct shape
         y = y.values
         X, y = check_X_y(X, y, accept_sparse=True)
         # prep datasets
-        train_set = self.get_dataset(
-            X, y,
-            feature_name=self.feature_name,
-            categorical_feature=self.categorical_feature,
-            free_raw_data=True)
+        train_set = self.get_dataset(X, y, free_raw_data=True)
         del X, y
         gc.collect()
         # train
@@ -148,6 +145,17 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
             num_boost_round=best_iteration,
             feature_name=self.feature_name,
             categorical_feature=self.categorical_feature)
+        return self
+
+    @property
+    def best_iteration(self):
+        check_is_fitted(self, ['_clf'])
+        return self._clf.best_iteration
+
+    @property
+    def best_score(self):
+        check_is_fitted(self, ['_clf'])
+        return self._clf.best_score['valid']['auc']
 
 
 def get_model():

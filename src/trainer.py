@@ -1,7 +1,7 @@
 import os
 import time
 import argparse
-# import pandas as pd
+import pandas as pd
 from eval import load_and_preprocess
 from sklearn.model_selection import train_test_split
 
@@ -26,8 +26,10 @@ def train_and_eval(X_train, y_train, X_val, y_val, module):
     # train model
     print('Start to train model')
     model = model.train(X_train, y_train, X_val, y_val)
-    print("Best iteration: {:.4f} with AUC ROC: {}".format(model.best_iteration, 'NA'))  # noqa
-    return model
+    best_iter = model.best_iteration
+    best_score = model.best_score
+    print("Best iteration: {:.4f} with AUC ROC: {}".format(best_iter, best_score))  # noqa
+    return pd.DataFrame({'best_iter': [best_iter], 'best_score': [best_score]})
 
 
 def parse_args():
@@ -61,7 +63,7 @@ if __name__ == '__main__':
         X_train, df_train.target,
         test_size=TEST_SIZE, random_state=RANDOM_STATE,
         shuffle=SHUFFLE, stratify=df_train.target)
-    model = train_and_eval(X_t, y_t, X_v, y_v, module)
-    # filepath = os.path.join(datapath, model + '.csv')
-    # df_score.to_csv(filepath)
-    # print('Save CV score file to {}'.format(filepath))
+    df_score = train_and_eval(X_t, y_t, X_v, y_v, module)
+    filepath = os.path.join(datapath, 'trainer_{}.csv'.format(model))
+    df_score.to_csv(filepath)
+    print('Save CV score file to {}'.format(filepath))

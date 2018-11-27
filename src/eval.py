@@ -111,7 +111,7 @@ if __name__ == '__main__':
             test_size=TEST_SIZE, random_state=RANDOM_STATE,
             shuffle=SHUFFLE, stratify=df_train.target)
         best_thres, df_score = fit_and_eval(X_t, y_t, X_v, y_v, module)
-        filepath = os.path.join(datapath, model + '.csv')
+        filepath = os.path.join(datapath, 'eval_{}.csv'.format(model))
         df_score.to_csv(filepath)
         print('Save CV score file to {}'.format(filepath))
     else:
@@ -128,7 +128,7 @@ if __name__ == '__main__':
             avg_thres += best_thres
             score_dfs.append(df_score)
         best_thres = round(np.mean(avg_thres), 2)
-        filepath = os.path.join(datapath, model + '.csv')
+        filepath = os.path.join(datapath, 'trainer_{}.csv'.format(model))
         pd.concat(score_dfs, axis=1).to_csv(filepath)
         print('Save CV score file to {}'.format(filepath))
     print('All done and it took {:.2f}s'.format(time.time() - t0))
