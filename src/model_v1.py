@@ -148,7 +148,7 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
         return self
 
     @property
-    def best_iteration(self):
+    def best_param(self):
         check_is_fitted(self, ['_clf'])
         return self._clf.best_iteration
 

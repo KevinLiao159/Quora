@@ -26,10 +26,10 @@ def train_and_eval(X_train, y_train, X_val, y_val, module):
     # train model
     print('Start to train model')
     model = model.train(X_train, y_train, X_val, y_val)
-    best_iter = model.best_iteration
+    best_param = model.best_param
     best_score = model.best_score
-    print("Best iteration: {:.4f} with AUC ROC: {}".format(best_iter, best_score))  # noqa
-    return pd.DataFrame({'best_iter': [best_iter], 'best_score': [best_score]})
+    print("Best iteration: {:.4f} with AUC ROC: {}".format(best_param, best_score))  # noqa
+    return pd.DataFrame({'best_param': [best_param], 'best_score': [best_score]})   # noqa
 
 
 def parse_args():
