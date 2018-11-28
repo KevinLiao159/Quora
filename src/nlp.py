@@ -16,6 +16,17 @@ def normalize_unicode(text):
     return unicodedata.normalize('NFKD', text)
 
 
+def remove_newline(text):
+    """
+    remove \n and  \t
+    """
+    text = re.sub('\n', ' ', text)
+    text = re.sub('\t', ' ', text)
+    text = re.sub('\b', ' ', text)
+    text = re.sub('\r', ' ', text)
+    return text
+
+
 def spacing_punctuation(text):
     """
     add space before and after punctuation and symbols
@@ -45,10 +56,12 @@ def decontracted(text):
     de-contract the contraction
     """
     # specific
-    text = re.sub(r"won't", "will not", text)
-    text = re.sub(r"can\'t", "can not", text)
+    text = re.sub(r"(W|w)on\'t", "will not", text)
+    text = re.sub(r"(C|c)an\'t", "can not", text)
 
     # general
+    text = re.sub(r"(I|i)\'m", "i am", text)
+    text = re.sub(r"(A|a)in\'t", "is not", text)
     text = re.sub(r"n\'t", " not", text)
     text = re.sub(r"\'re", " are", text)
     text = re.sub(r"\'s", " is", text)
@@ -56,11 +69,10 @@ def decontracted(text):
     text = re.sub(r"\'ll", " will", text)
     text = re.sub(r"\'t", " not", text)
     text = re.sub(r"\'ve", " have", text)
-    text = re.sub(r"\'m", " am", text)
     return text
 
 
-def clean_numbers(text):
+def clean_number(text):
     """
     replace number with hash
     """
@@ -71,7 +83,23 @@ def clean_numbers(text):
     return text
 
 
-def preprocess(text, remove_punct=False):
+def remove_number(text):
+    """
+    numbers are not toxic
+    """
+    return re.sub('\d+', ' ', text)
+
+
+def remove_space(text):
+    """
+    remove extra spaces and ending space if any
+    """
+    text = re.sub('\s+', ' ', text)
+    text = re.sub('\s+$', '', text)
+    return text
+
+
+def preprocess(text, remove_punct=False, remove_num=True):
     """
     preprocess text into clean text for tokenization
     """
@@ -87,20 +115,35 @@ def preprocess(text, remove_punct=False):
         text = remove_punctuation(text)
     # 4. de-contract
     text = decontracted(text)
-    # 5. clean number
-    text = clean_numbers(text)
+    # 5. handle number
+    if remove_num:
+        text = remove_number(text)
+    else:
+        text = clean_number(text)
+    # 6. remove space
+    text = remove_space(text)
     return text
 
 
-def tokenize(text, remove_punct=False):
+def word_tokenize(text, remove_punct=False, remove_num=True):
     """
-    tokenize text into list of tokens
+    tokenize text into list of word tokens
     """
     # 1. preprocess
-    text = preprocess(text, remove_punct)
+    text = preprocess(text, remove_punct, remove_num)
     # 2. tokenize
     tokens = text.split()
     return tokens
+
+
+def char_tokenizer(text, remove_punct=False, remove_num=True):
+    """
+    This is used to split strings in small lots
+    I saw this in an article (I can't find the link anymore)
+    so <talk> and <talking> would have <Tal> <alk> in common
+    """
+    tokens = word_tokenize(text, remove_punct, remove_num)
+    return [token[i: i + 3] for token in tokens for i in range(len(token) - 2)]
 
 
 """
@@ -165,13 +208,13 @@ NLP pipeline
 """
 
 
-def pipeline_tokenize(text, remove_punct=False,
-                      stemmer=True, lemmatizer=False):
+def word_analyzer(text, remove_punct=False, remove_num=True,
+                  stemmer=True, lemmatizer=False):
     """
     1. clean text
     2. tokenize
     3. clean tokens
     """
-    tokens = tokenize(text, remove_punct)
+    tokens = word_tokenize(text, remove_punct, remove_num)
     tokens = clean_tokens(tokens, stemmer, lemmatizer)
     return tokens

@@ -11,17 +11,13 @@ from sklearn import metrics
 def load_and_preprocess(datapath, module):
     """
     load and preprocess
-
     Parameters
     ----------
     datapath: str, data directory that contains train.csv
-
     module: a python module
-
     Returns
     -------
     df_train: dataframe with raw text
-
     X_train: train data with proper features for model
     """
     t0 = time.time()
@@ -38,17 +34,13 @@ def fit_and_eval(X_train, y_train, X_val, y_val, module):
     """
     train model and eval hold-out performance
     BTW, write scores to csv files
-
     Parameters
     ----------
     X_train, y_train, X_val, y_val: features and targets
-
     module: a python module
-
     Return
     ------
     best_thres: float
-
     df_score: dataframe with thres and f1 score
     """
     # get model
@@ -102,9 +94,7 @@ if __name__ == '__main__':
     module = __import__(model)
     # 2. load and preprocess data
     df_train, X_train = load_and_preprocess(datapath, module)
-    # 3. train and eval
-    # TODO;
-    # 4. fit and eval
+    # 3. fit and eval
     if cv == 2:
         X_t, X_v, y_t, y_v = train_test_split(
             X_train, df_train.target,
