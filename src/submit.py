@@ -7,17 +7,13 @@ import pandas as pd
 def load_and_preprocess(datapath, module):
     """
     load and preprocess
-
     Parameters
     ----------
     datapath: str, data directory that contains train.csv and test.csv
-
     module: a python module
-
     Returns
     -------
     df_train, df_test: dataframe with raw text
-
     X_train, X_test: matrix with proper features
     """
     t0 = time.time()
@@ -44,17 +40,12 @@ def create_submission(X_train, y_train, X_test, df_test, thres,
     """
     train model with entire training data, predict test data,
     and create submission file
-
     Parameters
     ----------
     X_train, y_train, X_test: features and targets
-
     df_test: dataframe, test data
-
     thres: float, a decision threshold for classification
-
     module: a python module
-
     filepath: tmp path to store score csv
     """
     # get model
