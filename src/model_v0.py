@@ -8,6 +8,7 @@ model: SVM, or sklearn logistic regression (faster)
 """
 
 import nlp
+import operator
 import numpy as np
 from scipy import sparse
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -15,6 +16,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_union
+from sklearn import metrics
 
 
 class NbSvmClassifier(BaseEstimator, ClassifierMixin):
@@ -53,6 +55,50 @@ class NbSvmClassifier(BaseEstimator, ClassifierMixin):
             n_jobs=self.n_jobs
         ).fit(X_nb, y)
         return self
+
+    def train(self, X_train, y_train, X_val, y_val, Cs=None):
+        """
+        trainer to score auc over a grid of Cs
+
+        Parameters
+        ----------
+        X_train, y_train, X_val, y_val: features and targets
+
+        Cs: list of floats | int
+
+        Return
+        ------
+        self
+        """
+        # init grid
+        origin_C = self.C
+        if Cs is None:
+            Cs = [0.01, 0.1, 0.5, 1, 2, 10]
+        # score
+        scores = {}
+        for C in Cs:
+            # fit
+            self.C = C
+            model = self.fit(X_train, y_train)
+            # predict
+            y_proba = model.predict_proba(X_val)
+            scores[C] = metrics.roc_auc_score(y_val, y_proba)
+            print("Val AUC Score: {:.4f} with C = {}".format(scores[C], C)) # noqa
+        # get max
+        self._best_C, self._best_score = max(scores.items(), key=operator.itemgetter(1))  # noqa
+        # reset
+        self.C = origin_C
+        return self
+
+    @property
+    def best_param(self):
+        check_is_fitted(self, ['_clf'])
+        return self._best_C
+
+    @property
+    def best_score(self):
+        check_is_fitted(self, ['_clf'])
+        return self._best_score
 
 
 def get_model():
