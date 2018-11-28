@@ -118,10 +118,13 @@ def word_transformer(df_text, stop_words=None):
     ------
     df_features
     """
+    def _tokenizer(text):
+        return nlp.word_tokenize(text, remove_punct=False, remove_num=True)
+
     vectorizer = TfidfVectorizer(
         strip_accents='unicode',
         ngram_range=(1, 3),
-        tokenizer=nlp.word_tokenize,
+        tokenizer=_tokenizer,
         analyzer='word',
         min_df=3, max_df=0.9, max_features=None,
         use_idf=True, smooth_idf=True, sublinear_tf=True,
@@ -143,10 +146,13 @@ def char_transformer(df_text, stop_words=None):
     ------
     df_features
     """
+    def _tokenizer(text):
+        return nlp.char_tokenize(text, remove_punct=False, remove_num=True)
+
     vectorizer = TfidfVectorizer(
         strip_accents='unicode',
         ngram_range=(1, 1),
-        tokenizer=nlp.char_tokenize,
+        tokenizer=_tokenizer,
         analyzer='word',
         min_df=3, max_df=0.9, max_features=None,
         use_idf=True, smooth_idf=True, sublinear_tf=True,
