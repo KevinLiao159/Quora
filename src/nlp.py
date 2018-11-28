@@ -136,7 +136,7 @@ def word_tokenize(text, remove_punct=False, remove_num=True):
     return tokens
 
 
-def char_tokenizer(text, remove_punct=False, remove_num=True):
+def char_tokenize(text, remove_punct=False, remove_num=True):
     """
     This is used to split strings in small lots
     I saw this in an article (I can't find the link anymore)
