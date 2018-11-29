@@ -188,6 +188,8 @@ def transform(df_text):
     from scipy import sparse
     # 1. get count features
     count_features = sparse.csr_matrix(nlp.count_feature_transformer(df_text).values)   # noqa
-    # 2. get tfidf features
-    tfidf_features = model_v0.transform(df_text)
-    return sparse.hstack([count_features, tfidf_features]).tocsr()
+    # 2. get tfidf word features
+    word_features = model_v0.word_transformer(df_text)
+    # 3. get tfidf char features
+    char_features = model_v0.char_transformer(df_text)
+    return sparse.hstack([count_features, word_features, char_features]).tocsr()    # noqa
