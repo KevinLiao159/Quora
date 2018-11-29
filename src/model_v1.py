@@ -8,9 +8,6 @@ model: Light GBM - DART and GBDT with different seeds
 """
 
 import gc
-import model_v0
-import numpy as np
-from scipy import sparse
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted
 import lightgbm
@@ -22,8 +19,7 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
     """
     def __init__(self, params,
                  feature_name='auto',
-                 categorical_feature='auto',
-                 nb=False):
+                 categorical_feature='auto'):
         """
         Parameter
         ---------
@@ -33,13 +29,10 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
 
         categorical_feature: list of strings or int, or 'auto',
             optional (default="auto")
-
-        nb: bool, add Naive Bayes features
         """
         self.params = params
         self.feature_name = feature_name
         self.categorical_feature = categorical_feature
-        self.nb = nb
 
     def predict(self, X, num_iteration=None):
         # Verify that model has been fit
@@ -69,13 +62,6 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
         ------
         lightgbm dataset
         """
-        if self.nb:
-            def pr(X, y_i, y):
-                p = X[y == y_i].sum(0)
-                return (p+1) / ((y == y_i).sum()+1)
-
-            self._r = sparse.csr_matrix(np.log(pr(X, 1, y) / pr(X, 0, y)))
-            X = X.multiply(self._r)
         return lightgbm.Dataset(
             data=X, label=y,
             feature_name=self.feature_name,
@@ -197,4 +183,11 @@ def get_model():
 
 
 def transform(df_text):
-    return model_v0.transform(df_text)
+    import model_v0
+    import nlp
+    from scipy import sparse
+    # 1. get count features
+    count_features = sparse.csr_matrix(nlp.count_feature_transformer(df_text).values)   # noqa
+    # 2. get tfidf features
+    tfidf_features = model_v0.transform(df_text)
+    return sparse.hstack([count_features, tfidf_features]).tocsr()
