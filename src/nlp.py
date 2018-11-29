@@ -2,7 +2,7 @@ import re
 import string
 import unicodedata
 import nltk
-
+import pandas as pd
 
 """
 text cleaning
@@ -218,3 +218,76 @@ def word_analyzer(text, remove_punct=False, remove_num=True,
     tokens = word_tokenize(text, remove_punct, remove_num)
     tokens = clean_tokens(tokens, stemmer, lemmatizer)
     return tokens
+
+
+"""
+Extra - other count-based features
+"""
+
+
+def count_regexp_occ(regex, text):
+    """
+    simple way to get the number of occurence of a regex
+
+    Parameters
+    ----------
+    regex: str, regex of an interested pattern
+
+    text: str
+
+    Return
+    ------
+    count of occurence: int
+    """
+    return len(re.findall(regex, text))
+
+
+def count_feature_transformer(df_text, col='question_text'):
+    """
+    extract count of regex from text
+
+    Parameters
+    ----------
+    df_text: dataframe
+
+    Return
+    ------
+    dataframe with count features
+    """
+    # make sure it is a dataframe
+    df_text = pd.DataFrame(df_text)
+    # Count number of \n
+    df_text["ant_slash_n"] = df_text[col].apply(lambda x: count_regexp_occ(r"\n", x))   # noqa
+    # Get length in words and characters
+    df_text["raw_word_len"] = df_text[col].apply(lambda x: len(x.split()))
+    df_text["raw_char_len"] = df_text[col].apply(lambda x: len(x))
+    # Check number of upper case, if you're angry you may write in upper case
+    df_text["nb_upper"] = df_text[col].apply(lambda x: count_regexp_occ(r"[A-Z]", x))   # noqa
+    # Number of F words - f..k contains folk, fork,
+    df_text["nb_fk"] = df_text[col].apply(lambda x: count_regexp_occ(r"[Ff]\S{2}[Kk]", x))  # noqa
+    # Number of S word
+    df_text["nb_sk"] = df_text[col].apply(lambda x: count_regexp_occ(r"[Ss]\S{2}[Kk]", x))  # noqa
+    # Number of D words
+    df_text["nb_dk"] = df_text[col].apply(lambda x: count_regexp_occ(r"[dD]ick", x))    # noqa
+    # Number of occurence of You, insulting someone usually needs someone called : you  # noqa
+    df_text["nb_you"] = df_text[col].apply(lambda x: count_regexp_occ(r"\W[Yy]ou\W", x))    # noqa
+    # Just to check you really refered to my mother ;-)
+    df_text["nb_mother"] = df_text[col].apply(lambda x: count_regexp_occ(r"\Wmother\W", x)) # noqa
+    # Just checking for toxic 19th century vocabulary
+    df_text["nb_ng"] = df_text[col].apply(lambda x: count_regexp_occ(r"\Wnigger\W", x)) # noqa
+    # Some Sentences start with a <:> so it may help
+    df_text["start_with_columns"] = df_text[col].apply(lambda x: count_regexp_occ(r"^\:+", x))  # noqa
+    # Check for time stamp
+    df_text["has_timestamp"] = df_text[col].apply(lambda x: count_regexp_occ(r"\d{2}|:\d{2}", x))   # noqa
+    # Check for dates 18:44, 8 December 2010
+    df_text["has_date_long"] = df_text[col].apply(lambda x: count_regexp_occ(r"\D\d{2}:\d{2}, \d{1,2} \w+ \d{4}", x))   # noqa
+    # Check for date short 8 December 2010
+    df_text["has_date_short"] = df_text[col].apply(lambda x: count_regexp_occ(r"\D\d{1,2} \w+ \d{4}", x))   # noqa
+    # Check for http links
+    df_text["has_http"] = df_text[col].apply(lambda x: count_regexp_occ(r"http[s]{0,1}://\S+", x))  # noqa
+    # check for mail
+    df_text["has_mail"] = df_text[col].apply(lambda x: count_regexp_occ(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', x))  # noqa
+    # Looking for words surrounded by == word == or """" word """"
+    df_text["has_emphasize_equal"] = df_text[col].apply(lambda x: count_regexp_occ(r"\={2}.+\={2}", x))   # noqa
+    df_text["has_emphasize_quotes"] = df_text[col].apply(lambda x: count_regexp_occ(r"\"{4}\S+\"{4}", x)) # noqa
+    return df_text[[c for c in df_text.columns if c != col]]
