@@ -22,7 +22,7 @@ class NbSvmClassifier(BaseEstimator, ClassifierMixin):
     """
     Naive Bayes - Support Vector Machine
     """
-    def __init__(self, C=0.8, dual=True, n_jobs=-1):
+    def __init__(self, C=1.0, dual=True, n_jobs=-1):
         self.C = C
         self.dual = dual
         self.n_jobs = n_jobs
@@ -172,4 +172,4 @@ def transform(df_text):
     ------
     features: dataframe, or numpy, scipy
     """
-    return sparse.hstack([word_transformer(df_text), char_transformer(df_text)])    # noqa
+    return sparse.hstack([word_transformer(df_text), char_transformer(df_text)]).tocsr()    # noqa

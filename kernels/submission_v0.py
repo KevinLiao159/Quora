@@ -4,14 +4,30 @@ import re
 import string
 import unicodedata
 import pandas as pd
-
 import numpy as np
 from scipy import sparse
+from contextlib import contextmanager
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_union
+
+
+"""
+utils
+"""
+
+
+@contextmanager
+def timer(name):
+    """
+    Taken from Konstantin Lopuhin https://www.kaggle.com/lopuhin
+    in script named : Mercari Golf: 0.3875 CV in 75 LOC, 1900 s
+    https://www.kaggle.com/lopuhin/mercari-golf-0-3875-cv-in-75-loc-1900-s
+    """
+    t0 = time.time()
+    yield
+    print(f'[{name}] done in {time.time() - t0:.0f} s')
 
 
 """
@@ -24,6 +40,17 @@ def normalize_unicode(text):
     unicode string normalization
     """
     return unicodedata.normalize('NFKD', text)
+
+
+def remove_newline(text):
+    """
+    remove \n and  \t
+    """
+    text = re.sub('\n', ' ', text)
+    text = re.sub('\t', ' ', text)
+    text = re.sub('\b', ' ', text)
+    text = re.sub('\r', ' ', text)
+    return text
 
 
 def spacing_punctuation(text):
@@ -55,10 +82,12 @@ def decontracted(text):
     de-contract the contraction
     """
     # specific
-    text = re.sub(r"won't", "will not", text)
-    text = re.sub(r"can\'t", "can not", text)
+    text = re.sub(r"(W|w)on\'t", "will not", text)
+    text = re.sub(r"(C|c)an\'t", "can not", text)
 
     # general
+    text = re.sub(r"(I|i)\'m", "i am", text)
+    text = re.sub(r"(A|a)in\'t", "is not", text)
     text = re.sub(r"n\'t", " not", text)
     text = re.sub(r"\'re", " are", text)
     text = re.sub(r"\'s", " is", text)
@@ -66,11 +95,10 @@ def decontracted(text):
     text = re.sub(r"\'ll", " will", text)
     text = re.sub(r"\'t", " not", text)
     text = re.sub(r"\'ve", " have", text)
-    text = re.sub(r"\'m", " am", text)
     return text
 
 
-def clean_numbers(text):
+def clean_number(text):
     """
     replace number with hash
     """
@@ -81,7 +109,23 @@ def clean_numbers(text):
     return text
 
 
-def preprocess(text, remove_punct=False):
+def remove_number(text):
+    """
+    numbers are not toxic
+    """
+    return re.sub('\d+', ' ', text)
+
+
+def remove_space(text):
+    """
+    remove extra spaces and ending space if any
+    """
+    text = re.sub('\s+', ' ', text)
+    text = re.sub('\s+$', '', text)
+    return text
+
+
+def preprocess(text, remove_punct=False, remove_num=True):
     """
     preprocess text into clean text for tokenization
     """
@@ -97,28 +141,111 @@ def preprocess(text, remove_punct=False):
         text = remove_punctuation(text)
     # 4. de-contract
     text = decontracted(text)
-    # 5. clean number
-    text = clean_numbers(text)
+    # 5. handle number
+    if remove_num:
+        text = remove_number(text)
+    else:
+        text = clean_number(text)
+    # 6. remove space
+    text = remove_space(text)
     return text
 
 
-def tokenize(text, remove_punct=False):
+def word_tokenize(text, remove_punct=False, remove_num=True):
     """
-    tokenize text into list of tokens
+    tokenize text into list of word tokens
     """
     # 1. preprocess
-    text = preprocess(text, remove_punct)
+    text = preprocess(text, remove_punct, remove_num)
     # 2. tokenize
     tokens = text.split()
     return tokens
 
 
-def preprocessor(text):
-    return preprocess(text, remove_punct=False)
+def char_tokenize(text, remove_punct=False, remove_num=True):
+    """
+    This is used to split strings in small lots
+    I saw this in an article (I can't find the link anymore)
+    so <talk> and <talking> would have <Tal> <alk> in common
+    """
+    tokens = word_tokenize(text, remove_punct, remove_num)
+    return [token[i: i + 3] for token in tokens for i in range(len(token) - 2)]
 
 
-def tokenizer(text):
-    return tokenize(text, remove_punct=False)
+"""
+transformer
+"""
+
+
+def word_transformer(df_text, stop_words=None):
+    """
+    transform and extract word features from raw text dataframe
+
+    Parameters
+    ----------
+    df_text: dataframe, single column with text
+
+    stop_words: string {‘english’}, list, or None (default)
+
+    Return
+    ------
+    df_features
+    """
+    def _tokenizer(text):
+        return word_tokenize(text, remove_punct=False, remove_num=True)
+
+    vectorizer = TfidfVectorizer(
+        strip_accents='unicode',
+        ngram_range=(1, 3),
+        tokenizer=_tokenizer,
+        analyzer='word',
+        min_df=3, max_df=0.9, max_features=None,
+        use_idf=True, smooth_idf=True, sublinear_tf=True,
+        stop_words=stop_words)
+    return vectorizer.fit_transform(df_text)
+
+
+def char_transformer(df_text, stop_words=None):
+    """
+    transform and extract word features from raw text dataframe
+
+    Parameters
+    ----------
+    df_text: dataframe, single column with text
+
+    stop_words: string {‘english’}, list, or None (default)
+
+    Return
+    ------
+    df_features
+    """
+    def _tokenizer(text):
+        return char_tokenize(text, remove_punct=False, remove_num=True)
+
+    vectorizer = TfidfVectorizer(
+        strip_accents='unicode',
+        ngram_range=(1, 1),
+        tokenizer=_tokenizer,
+        analyzer='word',
+        min_df=3, max_df=0.9, max_features=None,
+        use_idf=True, smooth_idf=True, sublinear_tf=True,
+        stop_words=stop_words)
+    return vectorizer.fit_transform(df_text)
+
+
+def transform(df_text):
+    """
+    transform and extract features from raw text dataframe
+
+    Parameters
+    ----------
+    df_text: dataframe, single column with text
+
+    Return
+    ------
+    features: dataframe, or numpy, scipy
+    """
+    return sparse.hstack([word_transformer(df_text), char_transformer(df_text)]).tocsr()    # noqa
 
 
 """
@@ -130,7 +257,7 @@ class NbSvmClassifier(BaseEstimator, ClassifierMixin):
     """
     Naive Bayes - Support Vector Machine
     """
-    def __init__(self, C=0.8, dual=True, n_jobs=-1):
+    def __init__(self, C=1.0, dual=True, n_jobs=-1):
         self.C = C
         self.dual = dual
         self.n_jobs = n_jobs
@@ -168,50 +295,12 @@ def get_model():
     return NbSvmClassifier()
 
 
-def transform(df_text, stop_words=None, add_char=True):
-    """
-    Tf-idf transform and extract features from raw text dataframe
-
-    Parameters
-    ----------
-    df_text: dataframe, single column with text
-
-    stop_words: string {‘english’}, list, or None (default)
-
-    add_char: bool, add n-grams char features
-
-    Return
-    ------
-    df_features
-    """
-    vectorizer = TfidfVectorizer(
-        strip_accents='unicode',
-        ngram_range=(1, 3),
-        tokenizer=tokenizer, analyzer='word',
-        min_df=3, max_df=0.9, max_features=None,
-        use_idf=True, smooth_idf=True, sublinear_tf=True,
-        stop_words=stop_words)
-    if add_char:
-        char_vectorizer = TfidfVectorizer(
-            strip_accents='unicode',
-            ngram_range=(1, 3),
-            preprocessor=preprocessor, analyzer='char',
-            min_df=3, max_df=0.9, max_features=None,
-            use_idf=True, smooth_idf=True, sublinear_tf=True,
-            stop_words=stop_words)
-        vectorizer = make_union(vectorizer, char_vectorizer)
-    return vectorizer.fit_transform(df_text)
-
-
 def load_and_preprocess(datapath):
     """
     load and preprocess
-
     Parameters
     ----------
     datapath: str, data directory that contains train.csv and test.csv
-
-    module: a python module
 
     Returns
     -------
@@ -219,13 +308,12 @@ def load_and_preprocess(datapath):
 
     X_train, X_test: matrix with proper features
     """
-    t0 = time.time()
-    print("Loading data")
+    print("loading data ......")
     df_train = pd.read_csv(os.path.join(datapath, "train.csv"))
     df_test = pd.read_csv(os.path.join(datapath, "test.csv"))
     train_test_cut = df_train.shape[0]
-    print("Train data with shape : ", df_train.shape)
-    print("Test data with shape : ", df_test.shape)
+    print("train data with shape : ", df_train.shape)
+    print("test data with shape : ", df_test.shape)
     # concat text data into single dataframe
     df_all = pd.concat(
         [df_train[['question_text']], df_test[['question_text']]],
@@ -234,12 +322,10 @@ def load_and_preprocess(datapath):
     X_features = transform(df_all['question_text'])
     X_train = X_features[:train_test_cut]
     X_test = X_features[train_test_cut:]
-    print('Load and preprocessing took {:.2f}s'.format(time.time() - t0))
     return df_train, df_test, X_train, X_test
 
 
-def create_submission(X_train, y_train, X_test, df_test, thres,
-                      filepath='submission.csv'):
+def create_submission(X_train, y_train, X_test, df_test, thres):
     """
     train model with entire training data, predict test data,
     and create submission file
@@ -252,38 +338,42 @@ def create_submission(X_train, y_train, X_test, df_test, thres,
 
     thres: float, a decision threshold for classification
 
-    filepath: tmp path to store score csv
+    module: a python module
+
+    Return
+    ------
+    df_summission
     """
     # get model
     model = get_model()
     # train model
-    t0 = time.time()
-    print('Start to train model')
+    print('fitting model')
     model = model.fit(X_train, y_train)
-    print('Training took {:.2f}'.format(time.time() - t0))
     # predict
-    print('Start to predict')
+    print('predicting probas')
     y_pred = (model.predict_proba(X_test) > thres).astype('int')
     # create submission file
-    print('Save submission file to {}'.format(filepath))
-    pd.DataFrame(
-        {
-            'qid': df_test.qid,
-            'prediction': y_pred
-        }
-    ).to_csv(filepath, index=False)
+    return pd.DataFrame({'qid': df_test.qid, 'prediction': y_pred})
 
 
 if __name__ == '__main__':
     # config
     # SHUFFLE = True
     DATA_PATH = '../input/'
-    THRES = 0.24
+    FILE_PATH = 'submission.csv'
+    THRES = 0.23
 
     t0 = time.time()
     # 1. load and preprocess data
-    df_train, df_test, X_train, X_test = load_and_preprocess(DATA_PATH)
+    with timer("Load and Preprocess"):
+        df_train, df_test, X_train, X_test = load_and_preprocess(DATA_PATH)
     # 2. create submission file
-    create_submission(X_train, df_train.target, X_test, df_test, THRES)
+    with timer('Trainning and Creating Submission'):
+        df_submission = create_submission(
+            X_train, df_train.target,
+            X_test, df_test,
+            THRES)
+        df_submission.to_csv(FILE_PATH, index=False)
+        print('Save submission file to {}'.format(FILE_PATH))
     # record time spent
-    print('All done and it took {:.2f}s'.format(time.time() - t0))
+    print('Entire program is done and it took {:.2f}s'.format(time.time() - t0)) # noqa

@@ -5,6 +5,8 @@ import pandas as pd
 from eval import load_and_preprocess
 from sklearn.model_selection import train_test_split
 
+from utils import timer
+
 
 def train_and_eval(X_train, y_train, X_val, y_val, module):
     """
@@ -24,11 +26,11 @@ def train_and_eval(X_train, y_train, X_val, y_val, module):
     # get model
     model = module.get_model()
     # train model
-    print('Start to train model')
+    print('trainning model ......')
     model = model.train(X_train, y_train, X_val, y_val)
     best_param = model.best_param
     best_score = model.best_score
-    print("Best iteration: {:.4f} with AUC ROC: {}".format(best_param, best_score))  # noqa
+    print("best param: {:.4f} with AUC ROC: {}".format(best_param, best_score))  # noqa
     return pd.DataFrame({'best_param': [best_param], 'best_score': [best_score]})   # noqa
 
 
@@ -57,13 +59,16 @@ if __name__ == '__main__':
     # 1. import module
     module = __import__(model)
     # 2. load and preprocess data
-    df_train, X_train = load_and_preprocess(datapath, module)
+    with timer("Load and Preprocess"):
+        df_train, X_train = load_and_preprocess(datapath, module)
     # 3. train and eval
-    X_t, X_v, y_t, y_v = train_test_split(
-        X_train, df_train.target,
-        test_size=TEST_SIZE, random_state=RANDOM_STATE,
-        shuffle=SHUFFLE, stratify=df_train.target)
-    df_score = train_and_eval(X_t, y_t, X_v, y_v, module)
-    filepath = os.path.join(datapath, 'trainer_{}.csv'.format(model))
-    df_score.to_csv(filepath)
-    print('Save CV score file to {}'.format(filepath))
+    with timer('Trainning and Tuning'):
+        X_t, X_v, y_t, y_v = train_test_split(
+            X_train, df_train.target,
+            test_size=TEST_SIZE, random_state=RANDOM_STATE,
+            shuffle=SHUFFLE, stratify=df_train.target)
+        df_score = train_and_eval(X_t, y_t, X_v, y_v, module)
+        filepath = os.path.join(datapath, 'trainer_{}.csv'.format(model))
+        df_score.to_csv(filepath)
+        print('Save CV score file to {}'.format(filepath))
+    print('Entire program is done and it took {:.2f}s'.format(time.time() - t0)) # noqa
