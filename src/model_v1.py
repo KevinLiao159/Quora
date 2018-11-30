@@ -37,12 +37,12 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
     def predict(self, X, num_iteration=None):
         # Verify that model has been fit
         check_is_fitted(self, ['_clf'])
-        return (self._clf.predict(X, num_iteration=None) > 0.5).astype(int)
+        return (self._clf.predict(X, num_iteration) > 0.5).astype(int)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, num_iteration=None):
         # Verify that model has been fit
         check_is_fitted(self, ['_clf'])
-        return self._clf.predict(X, num_iteration=None)
+        return self._clf.predict(X, num_iteration)
 
     def get_dataset(self, X, y, free_raw_data=True):
         """
@@ -171,7 +171,7 @@ def get_model():
         'min_gain_to_split': 0.1,
         'lambda_l1': 0.1,
         'lambda_l2': 0,
-        'scale_pos_weight': 10,
+        'scale_pos_weight': 1,
         'num_threads': 16,
         'verbosity': 0
     }
