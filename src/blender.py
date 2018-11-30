@@ -11,8 +11,8 @@ class BlendingClassifier(BaseEstimator, ClassifierMixin):
     """
     weighted average prediction from list of modules
     """
-    def __init__(self, modules, weights):
-        self.modules = modules
+    def __init__(self, models, weights):
+        self.models = models
         self.weights = weights
 
     def predict(self, X):
@@ -34,18 +34,20 @@ class BlendingClassifier(BaseEstimator, ClassifierMixin):
         X, y = check_X_y(X, y, accept_sparse=True)
         # fit models
         self._clfs = []
-        for module in self.modules:
-            model = module.get_model()
+        for model in self.models:
             self._clfs.append(model.fit(X, y))
         return self
 
 
 def get_model():
+    # init models
     import model_v0
     import model_v1
+    modelV0 = model_v0.get_model()
+    modelV1 = model_v1.get_model()
     # init weights
     weights = [0.5, 0.5]
-    return BlendingClassifier(modules=[model_v0, model_v1], weights=weights)
+    return BlendingClassifier(models=[modelV0, modelV1], weights=weights)
 
 
 def transform(df_text):
