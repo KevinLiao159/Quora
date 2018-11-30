@@ -130,8 +130,8 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
         ------
         self
         """
-        # Check that X and y have correct shape
-        y = y.values
+        # # Check that X and y have correct shape
+        # y = y.values
         X, y = check_X_y(X, y, accept_sparse=True)
         # prep datasets
         train_set = self.get_dataset(X, y, free_raw_data=True)
@@ -162,6 +162,7 @@ def get_model():
         'objective': 'binary',
         'metric': 'auc',
         'boosting_type': 'gbdt',
+        'boost_from_average': False,
         'learning_rate': 0.3,
         'max_bin': 100,
         'num_leaves': 31,

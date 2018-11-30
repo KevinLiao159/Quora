@@ -23,33 +23,17 @@ class BlendingClassifier(BaseEstimator, ClassifierMixin):
     def predict_proba(self, X):
         # Verify that model has been fit
         check_is_fitted(self, ['_clfs'])
-        y_proba = np.zeros(len(X))
-        for i, clf in enumerate(self.self._clfs):
+        y_proba = np.zeros(X.shape[0])
+        for i, clf in enumerate(self._clfs):
             y_proba += clf.predict_proba(X).reshape(-1) * self.weights[i]
         return y_proba
 
     def fit(self, X, y):
-        # Check that X and y have correct shape
-        y = y.values
+        # # Check that X and y have correct shape
+        # y = y.values
         X, y = check_X_y(X, y, accept_sparse=True)
         # fit models
         self._clfs = []
         for model in self.models:
             self._clfs.append(model.fit(X, y))
         return self
-
-
-def get_model():
-    # init models
-    import model_v0
-    import model_v1
-    modelV0 = model_v0.get_model()
-    modelV1 = model_v1.get_model()
-    # init weights
-    weights = [0.5, 0.5]
-    return BlendingClassifier(models=[modelV0, modelV1], weights=weights)
-
-
-def transform(df_text):
-    import model_v1
-    return model_v1.transform(df_text)

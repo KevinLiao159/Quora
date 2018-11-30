@@ -39,7 +39,8 @@ class NbSvmClassifier(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         # Check that X and y have correct shape
-        y = y.values
+        # if isinstance(y, (pd.DataFrame, pd.Serise)):
+        #     y = y.values
         X, y = check_X_y(X, y, accept_sparse=True)
 
         def pr(X, y_i, y):
