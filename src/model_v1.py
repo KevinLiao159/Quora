@@ -37,12 +37,12 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
     def predict(self, X, num_iteration=None):
         # Verify that model has been fit
         check_is_fitted(self, ['_clf'])
-        return (self._clf.predict(X, num_iteration=None) > 0.5).astype(int)
+        return (self._clf.predict(X, num_iteration) > 0.5).astype(int)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X, num_iteration=None):
         # Verify that model has been fit
         check_is_fitted(self, ['_clf'])
-        return self._clf.predict(X, num_iteration=None)
+        return self._clf.predict(X, num_iteration)
 
     def get_dataset(self, X, y, free_raw_data=True):
         """
@@ -69,8 +69,8 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
             free_raw_data=free_raw_data)
 
     def train(self, X_train, y_train, X_val, y_val,
-              num_boost_round=100,
-              early_stopping_rounds=20,
+              num_boost_round=1000,
+              early_stopping_rounds=50,
               verbose_eval=True):
         """
         train lightgbm and monitor the best iteration with validation
@@ -115,7 +115,7 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
         return self
 
     def fit(self, X, y,
-            best_iteration=100):
+            best_iteration=500):
         """
         fit lightgbm with best iteration, which is the best model
 
@@ -130,8 +130,8 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
         ------
         self
         """
-        # Check that X and y have correct shape
-        y = y.values
+        # # Check that X and y have correct shape
+        # y = y.values
         X, y = check_X_y(X, y, accept_sparse=True)
         # prep datasets
         train_set = self.get_dataset(X, y, free_raw_data=True)
@@ -159,37 +159,34 @@ class LightgbmClassifier(BaseEstimator, ClassifierMixin):
 
 def get_model():
     params = {
-        'boosting_type': 'gbdt',
         'objective': 'binary',
-        'learning_rate': 0.3,
-        'num_leaves': 12,
-        'max_depth': 5,
-        'min_split_gain': 0,
-        'subsample': 0.9,
-        'subsample_freq': 1,
-        'colsample_bytree': 0.9,
-        'min_child_samples': 1000,
-        'min_child_weight': 0,
-        'max_bin': 100,
-        'subsample_for_bin': 200000,
-        'reg_alpha': 0,
-        'reg_lambda': 0,
-        'scale_pos_weight': 5,
         'metric': 'auc',
-        'nthread': 2,
-        'verbose': 0
+        'boosting_type': 'gbdt',
+        'boost_from_average': False,
+        'learning_rate': 0.3,
+        'max_bin': 100,
+        'num_leaves': 31,
+        # 'max_depth': 10,
+        'bagging_fraction': 0.8,
+        'feature_fraction': 0.8,
+        'min_gain_to_split': 0.1,
+        'lambda_l1': 0.1,
+        'lambda_l2': 0,
+        'scale_pos_weight': 1,
+        'num_threads': 16,
+        'verbosity': 0
     }
     return LightgbmClassifier(params)
 
 
 def transform(df_text):
     import model_v0
-    import nlp
+    # import nlp
     from scipy import sparse
-    # 1. get count features
-    count_features = sparse.csr_matrix(nlp.count_feature_transformer(df_text).values)   # noqa
-    # 2. get tfidf word features
+#     # 1. get count features
+#     count_features = sparse.csr_matrix(nlp.count_feature_transformer(df_text).values)   # noqa
+#     # 2. get tfidf word features
     word_features = model_v0.word_transformer(df_text)
     # 3. get tfidf char features
     char_features = model_v0.char_transformer(df_text)
-    return sparse.hstack([count_features, word_features, char_features]).tocsr()    # noqa
+    return sparse.hstack([word_features, char_features]).tocsr()    # noqa
