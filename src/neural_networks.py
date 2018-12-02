@@ -97,7 +97,7 @@ class NeuralNetworkClassifier:
             class_weight=class_weight)
         return self
 
-    def fit(self, X, y, best_iteration=5, verbose=1):
+    def fit(self, X, y, best_iteration=2, verbose=1):
         """
         fit lightgbm with best iteration, which is the best model
 

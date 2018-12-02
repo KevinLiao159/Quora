@@ -1,6 +1,7 @@
 import os
 import time
 import argparse
+import numpy as np
 import pandas as pd
 
 from utils import timer
@@ -61,7 +62,7 @@ def create_submission(X_train, y_train, X_test, df_test, thres, module):
     model = model.fit(X_train, y_train)
     # predict
     print('predicting probas')
-    y_pred = (model.predict_proba(X_test) > thres).astype('int')
+    y_pred = np.squeeze(model.predict_proba(X_test) > thres).astype('int')
     # create submission file
     return pd.DataFrame({'qid': df_test.qid, 'prediction': y_pred})
 
