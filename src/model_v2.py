@@ -18,8 +18,8 @@ from neural_networks import NeuralNetworkClassifier
 
 
 # model configs
-MAX_FEATURES = int(1e5)
-MAX_LEN = 100
+MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
+MAX_LEN = 190    # max_len = 189
 EMBED_SIZE = 300
 LSTM_UNITS = 64
 DENSE_UNITS = 16
