@@ -27,6 +27,28 @@ def remove_newline(text):
     return text
 
 
+def decontracted(text):
+    """
+    de-contract the contraction
+    """
+    # specific
+    text = re.sub(r"(W|w)on\'t", "will not", text)
+    text = re.sub(r"(C|c)an\'t", "can not", text)
+    text = re.sub(r"(Y|y)\'all", "you all", text)
+
+    # general
+    text = re.sub(r"(I|i)\'m", "i am", text)
+    text = re.sub(r"(A|a)in\'t", "is not", text)
+    text = re.sub(r"n\'t", " not", text)
+    text = re.sub(r"\'re", " are", text)
+    text = re.sub(r"\'s", " is", text)
+    text = re.sub(r"\'d", " would", text)
+    text = re.sub(r"\'ll", " will", text)
+    text = re.sub(r"\'t", " not", text)
+    text = re.sub(r"\'ve", " have", text)
+    return text
+
+
 def spacing_punctuation(text):
     """
     add space before and after punctuation and symbols
@@ -49,27 +71,6 @@ def spacing_number(text):
     """
     re_tok = re.compile('([0-9]{1,})')
     return re_tok.sub(r' \1 ', text)
-
-
-def decontracted(text):
-    """
-    de-contract the contraction
-    """
-    # specific
-    text = re.sub(r"(W|w)on\'t", "will not", text)
-    text = re.sub(r"(C|c)an\'t", "can not", text)
-
-    # general
-    text = re.sub(r"(I|i)\'m", "i am", text)
-    text = re.sub(r"(A|a)in\'t", "is not", text)
-    text = re.sub(r"n\'t", " not", text)
-    text = re.sub(r"\'re", " are", text)
-    text = re.sub(r"\'s", " is", text)
-    text = re.sub(r"\'d", " would", text)
-    text = re.sub(r"\'ll", " will", text)
-    text = re.sub(r"\'t", " not", text)
-    text = re.sub(r"\'ve", " have", text)
-    return text
 
 
 def clean_number(text):
@@ -107,14 +108,14 @@ def preprocess(text, remove_punct=False, remove_num=True):
     text = normalize_unicode(text)
     # 2. to lower
     text = text.lower()
-    # 3. space
+    # 3. de-contract
+    text = decontracted(text)
+    # 4. space
     text = spacing_punctuation(text)
     text = spacing_number(text)
     # (optional)
     if remove_punct:
         text = remove_punctuation(text)
-    # 4. de-contract
-    text = decontracted(text)
     # 5. handle number
     if remove_num:
         text = remove_number(text)

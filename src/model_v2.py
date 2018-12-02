@@ -21,15 +21,15 @@ tqdm.pandas()
 
 
 # # toy configs
-# MAX_FEATURES = int(5e3)  # word count = 65306; char count = 10622
-# MAX_LEN = 20    # max_len = 189
+# MAX_FEATURES = int(5e3)
+# MAX_LEN = 20
 # EMBED_SIZE = 30
 # LSTM_UNITS = 16
 # DENSE_UNITS = 4
 
 # model configs
-MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
-MAX_LEN = 100    # max_len = 189
+MAX_FEATURES = int(1.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
+MAX_LEN = 65    # mean_len = 12; Q99_len = 40; max_len = 189;
 EMBED_SIZE = 300
 LSTM_UNITS = 64
 DENSE_UNITS = 16
