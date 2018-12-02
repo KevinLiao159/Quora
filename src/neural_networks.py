@@ -44,7 +44,8 @@ class NeuralNetworkClassifier:
         self.model.compile(
             loss='binary_crossentropy',
             optimizer='adam',
-            metrics=[precision_score, recall_score, f1_score, roc_auc_score])
+            metrics=['accuracy', precision_score, recall_score,
+                     f1_score, roc_auc_score])
 
     def predict(self, X):
         return (self.predict_proba(X) > THRES).astype(int)
@@ -70,7 +71,7 @@ class NeuralNetworkClassifier:
         # get callbacks
         callbacks.append(
             EarlyStopping(
-                monitor='val_roc_auc_score',
+                monitor='val_loss',
                 patience=3,
                 verbose=verbose
             )
@@ -79,7 +80,7 @@ class NeuralNetworkClassifier:
             callbacks.append(
                 ModelCheckpoint(
                     filepath=self.filepath,
-                    monitor='val_roc_auc_score',
+                    monitor='val_loss',
                     save_best_only=True,
                     save_weights_only=True
                 )
@@ -136,13 +137,13 @@ class NeuralNetworkClassifier:
 
     @property
     def best_param(self):
-        scores = self.model.history.history['val_roc_auc_score']
+        scores = self.model.history.history['val_loss']
         best_iteration, _ = max(enumerate(scores), key=operator.itemgetter(1))
         return best_iteration + 1
 
     @property
     def best_score(self):
-        scores = self.model.history.history['val_roc_auc_score']
+        scores = self.model.history.history['val_loss']
         _, best_val_f1 = max(enumerate(scores), key=operator.itemgetter(1))
         return best_val_f1
 
