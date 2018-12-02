@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn import metrics
 
-from utils import timer
+from utils import timer, load_trained_model
 
 
 def load_and_preprocess(datapath, module):
@@ -34,7 +34,7 @@ def load_and_preprocess(datapath, module):
     return df_train, X_train
 
 
-def fit_and_eval(X_train, y_train, X_val, y_val, module):
+def fit_and_eval(X_train, y_train, X_val, y_val, module, pretrained=False):
     """
     train model and eval hold-out performance
 
@@ -46,6 +46,8 @@ def fit_and_eval(X_train, y_train, X_val, y_val, module):
 
     module: a python module
 
+    pretrained: bool, if true, load the model pickle
+
     Return
     ------
     best_thres: float
@@ -54,9 +56,14 @@ def fit_and_eval(X_train, y_train, X_val, y_val, module):
     """
     # get model
     model = module.get_model()
-    # train model
-    print('fitting model ......')
-    model = model.fit(X_train, y_train)
+    # load model
+    if pretrained:
+        print('loading model ......')
+        network = model.model
+        model.model = load_trained_model(network, module.MODEL_FILEPATH)
+    else:   # or, train model
+        print('fitting model ......')
+        model = model.fit(X_train, y_train)
     # predict probas
     print('predicting probas ......')
     y_proba = model.predict_proba(X_val)
@@ -82,8 +89,11 @@ def parse_args():
                         help='input data path')
     parser.add_argument('--model', nargs='?', default='model_v0',
                         help='model version')
+    parser.add_argument('--pretrained', type=bool, default=False,
+                        help='use pre-trained model')
     parser.add_argument('--cv', type=int, default=2,
                         help='n folds for CV')
+
     return parser.parse_args()
 
 
@@ -96,6 +106,7 @@ if __name__ == '__main__':
     args = parse_args()
     datapath = args.datapath
     model = args.model
+    pretrained = args.pretrained
     cv = args.cv
 
     t0 = time.time()
@@ -111,7 +122,7 @@ if __name__ == '__main__':
                 X_train, df_train.target,
                 test_size=TEST_SIZE, random_state=RANDOM_STATE,
                 shuffle=SHUFFLE, stratify=df_train.target)
-            best_thres, df_score = fit_and_eval(X_t, y_t, X_v, y_v, module)
+            best_thres, df_score = fit_and_eval(X_t, y_t, X_v, y_v, module, pretrained) # noqa
             filepath = os.path.join(datapath, 'eval_{}.csv'.format(model))
             df_score.to_csv(filepath)
             print('Save CV score file to {}'.format(filepath))
