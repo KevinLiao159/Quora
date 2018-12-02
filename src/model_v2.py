@@ -18,11 +18,11 @@ from neural_networks import NeuralNetworkClassifier
 
 
 # model configs
-MAX_FEATURES = int(5e2)  # word count = 65306; char count = 10622
-MAX_LEN = 19    # max_len = 189
-EMBED_SIZE = 30
-LSTM_UNITS = 8
-DENSE_UNITS = 4
+MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
+MAX_LEN = 190    # max_len = 189
+EMBED_SIZE = 300
+LSTM_UNITS = 64
+DENSE_UNITS = 16
 
 # file configs
 MODEL_FILEPATH = os.path.join(
