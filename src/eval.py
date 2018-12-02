@@ -13,13 +13,17 @@ from utils import timer
 def load_and_preprocess(datapath, module):
     """
     load and preprocess
+
     Parameters
     ----------
     datapath: str, data directory that contains train.csv
+
     module: a python module
+
     Returns
     -------
     df_train: dataframe with raw text
+
     X_train: train data with proper features for model
     """
     print("loading data ......")
@@ -33,14 +37,19 @@ def load_and_preprocess(datapath, module):
 def fit_and_eval(X_train, y_train, X_val, y_val, module):
     """
     train model and eval hold-out performance
+
     BTW, write scores to csv files
+
     Parameters
     ----------
     X_train, y_train, X_val, y_val: features and targets
+
     module: a python module
+
     Return
     ------
     best_thres: float
+
     df_score: dataframe with thres and f1 score
     """
     # get model

@@ -30,7 +30,7 @@ def train_and_eval(X_train, y_train, X_val, y_val, module):
     model = model.train(X_train, y_train, X_val, y_val)
     best_param = model.best_param
     best_score = model.best_score
-    print("best param: {:.4f} with AUC ROC: {}".format(best_param, best_score))  # noqa
+    print("best param: {:.4f} with best score: {}".format(best_param, best_score))  # noqa
     return pd.DataFrame({'best_param': [best_param], 'best_score': [best_score]})   # noqa
 
 
