@@ -3,7 +3,6 @@ Neural Network Trainer
 """
 import operator
 import numpy as np
-from sklearn import utils
 import tensorflow as tf
 from keras import backend as K
 from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -17,7 +16,7 @@ class NeuralNetworkClassifier:
     """
     Neural Network classifier for my own interface - sklearn like
     """
-    def __init__(self, model, batch_size=512, epochs=10,
+    def __init__(self, model, batch_size=512, epochs=5, val_score='val_loss',
                  balancing_class_weight=False, filepath=None):
         """
         Parameter
@@ -27,6 +26,9 @@ class NeuralNetworkClassifier:
         batch_size: int or None, number of samples per gradient update
 
         epochs: int, number of epochs to train the model
+
+        val_score: str, score to monitor. ['accuracy', 'precision_score',
+            'recall_score', 'f1_score', 'roc_auc_score']
 
         balancing_class_weight: bool, if True, uses the values of y to
             automatically adjust weights inversely proportional to
@@ -38,6 +40,7 @@ class NeuralNetworkClassifier:
         self.model = model
         self.batch_size = batch_size
         self.epochs = epochs
+        self.val_score = val_score
         self.balancing_class_weight = balancing_class_weight
         self.filepath = filepath
         # compile model
@@ -47,11 +50,41 @@ class NeuralNetworkClassifier:
             metrics=['accuracy', precision_score, recall_score,
                      f1_score, roc_auc_score])
 
+    def _get_class_weight(self, y):
+        # get class_weight
+        if self.balancing_class_weight:
+            from sklearn import utils
+            return utils.class_weight.compute_class_weight(
+                'balanced', np.unique(y), y)
+        else:
+            return None
+
+    def _get_callbacks(self):
+        callbacks = []
+        # get callbacks
+        callbacks.append(
+            EarlyStopping(
+                monitor=self.val_score,
+                patience=2,
+                verbose=1
+            )
+        )
+        if self.filepath:
+            callbacks.append(
+                ModelCheckpoint(
+                    filepath=self.filepath,
+                    monitor=self.val_score,
+                    save_best_only=True,
+                    save_weights_only=True
+                )
+            )
+        return callbacks
+
     def predict(self, X):
         return (self.predict_proba(X) > THRES).astype(int)
 
     def predict_proba(self, X):
-        return self.model.predict(X)
+        return self.model.predict([X], batch_size=1024, verbose=1)
 
     def train(self, X_train, y_train, X_val, y_val, verbose=1):
         """
@@ -67,30 +100,10 @@ class NeuralNetworkClassifier:
         ------
         self
         """
-        callbacks = []
         # get callbacks
-        callbacks.append(
-            EarlyStopping(
-                monitor='val_loss',
-                patience=3,
-                verbose=verbose
-            )
-        )
-        if self.filepath:
-            callbacks.append(
-                ModelCheckpoint(
-                    filepath=self.filepath,
-                    monitor='val_loss',
-                    save_best_only=True,
-                    save_weights_only=True
-                )
-            )
+        callbacks = self._get_callbacks()
         # get class_weight
-        if self.balancing_class_weight:
-            class_weight = utils.class_weight.compute_class_weight(
-                'balanced', np.unique(y_train), y_train)
-        else:
-            class_weight = None
+        class_weight = self._get_class_weight(y_train)
         # train model
         self.model.fit(
             X_train, y_train,
@@ -121,11 +134,7 @@ class NeuralNetworkClassifier:
         self
         """
         # get class_weight
-        if self.balancing_class_weight:
-            class_weight = utils.class_weight.compute_class_weight(
-                'balanced', np.unique(y), y)
-        else:
-            class_weight = None
+        class_weight = self._get_class_weight(y)
         self.model.fit(
             X, y,
             batch_size=self.batch_size,
@@ -133,17 +142,21 @@ class NeuralNetworkClassifier:
             verbose=verbose,
             shuffle=True,
             class_weight=class_weight)
+        # save model
+        if self.filepath:
+            self.model.save_weights(self.filepath)
+            print('saved fitted model to {}'.format(self.filepath))
         return self
 
     @property
     def best_param(self):
-        scores = self.model.history.history['val_loss']
+        scores = self.model.history.history[self.val_score]
         best_iteration, _ = max(enumerate(scores), key=operator.itemgetter(1))
         return best_iteration + 1
 
     @property
     def best_score(self):
-        scores = self.model.history.history['val_loss']
+        scores = self.model.history.history[self.val_score]
         _, best_val_f1 = max(enumerate(scores), key=operator.itemgetter(1))
         return best_val_f1
 

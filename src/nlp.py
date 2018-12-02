@@ -31,7 +31,7 @@ def spacing_punctuation(text):
     """
     add space before and after punctuation and symbols
     """
-    re_tok = re.compile(f'([{string.punctuation}“”¨«»®´·º½¾¿¡§£₤$&#‘’])')
+    re_tok = re.compile(f'([{string.punctuation}“”¨«»®´·º½¾¿¡§£₤$&#‘’-])')
     return re_tok.sub(r' \1 ', text)
 
 
