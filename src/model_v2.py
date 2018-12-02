@@ -83,5 +83,5 @@ def transform(df_text):
     X = tokenizer.texts_to_sequences(df_text)
 
     # pad the sentences
-    X = pad_sequences(X, maxlen=MAX_LEN)
+    X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='pre')
     return X
