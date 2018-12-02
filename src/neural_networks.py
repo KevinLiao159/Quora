@@ -200,5 +200,3 @@ def roc_auc_score(y_true, y_proba):
     roc_auc = tf.metrics.auc(y_true, y_proba)[1]
     K.get_session().run(tf.local_variables_initializer())
     return roc_auc
-
-def foo
