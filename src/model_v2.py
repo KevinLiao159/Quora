@@ -20,19 +20,19 @@ from tqdm import tqdm
 tqdm.pandas()
 
 
-# toy configs
-MAX_FEATURES = int(5e3)  # word count = 65306; char count = 10622
-MAX_LEN = 20    # max_len = 189
-EMBED_SIZE = 30
-LSTM_UNITS = 16
-DENSE_UNITS = 4
+# # toy configs
+# MAX_FEATURES = int(5e3)  # word count = 65306; char count = 10622
+# MAX_LEN = 20    # max_len = 189
+# EMBED_SIZE = 30
+# LSTM_UNITS = 16
+# DENSE_UNITS = 4
 
-# # model configs
-# MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
-# MAX_LEN = 200    # max_len = 189
-# EMBED_SIZE = 300
-# LSTM_UNITS = 64
-# DENSE_UNITS = 16
+# model configs
+MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
+MAX_LEN = 100    # max_len = 189
+EMBED_SIZE = 300
+LSTM_UNITS = 64
+DENSE_UNITS = 16
 
 # file configs
 MODEL_FILEPATH = os.path.join(
