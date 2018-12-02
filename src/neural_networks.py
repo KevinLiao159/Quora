@@ -49,8 +49,6 @@ class NeuralNetworkClassifier:
             optimizer='adam',
             metrics=['accuracy', precision_score, recall_score,
                      f1_score, roc_auc_score])
-<<<<<<< HEAD
-=======
 
     def _get_class_weight(self, y):
         # get class_weight
@@ -81,7 +79,6 @@ class NeuralNetworkClassifier:
                 )
             )
         return callbacks
->>>>>>> v2
 
     def predict(self, X):
         return (self.predict_proba(X) > THRES).astype(int)
@@ -104,26 +101,7 @@ class NeuralNetworkClassifier:
         self
         """
         # get callbacks
-<<<<<<< HEAD
-        callbacks.append(
-            EarlyStopping(
-                monitor='val_loss',
-                patience=3,
-                verbose=verbose
-            )
-        )
-        if self.filepath:
-            callbacks.append(
-                ModelCheckpoint(
-                    filepath=self.filepath,
-                    monitor='val_loss',
-                    save_best_only=True,
-                    save_weights_only=True
-                )
-            )
-=======
         callbacks = self._get_callbacks()
->>>>>>> v2
         # get class_weight
         class_weight = self._get_class_weight(y_train)
         # train model
@@ -172,21 +150,13 @@ class NeuralNetworkClassifier:
 
     @property
     def best_param(self):
-<<<<<<< HEAD
-        scores = self.model.history.history['val_loss']
-=======
         scores = self.model.history.history[self.val_score]
->>>>>>> v2
         best_iteration, _ = max(enumerate(scores), key=operator.itemgetter(1))
         return best_iteration + 1
 
     @property
     def best_score(self):
-<<<<<<< HEAD
-        scores = self.model.history.history['val_loss']
-=======
         scores = self.model.history.history[self.val_score]
->>>>>>> v2
         _, best_val_f1 = max(enumerate(scores), key=operator.itemgetter(1))
         return best_val_f1
 
