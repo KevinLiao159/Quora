@@ -15,14 +15,24 @@ from keras.layers import (Input, Embedding, Bidirectional,
 from keras.models import Model
 
 from neural_networks import NeuralNetworkClassifier
+from nlp import preprocess
+from tqdm import tqdm
+tqdm.pandas()
 
 
-# model configs
-MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
-MAX_LEN = 190    # max_len = 189
-EMBED_SIZE = 300
-LSTM_UNITS = 64
-DENSE_UNITS = 16
+# toy configs
+MAX_FEATURES = int(5e3)  # word count = 65306; char count = 10622
+MAX_LEN = 20    # max_len = 189
+EMBED_SIZE = 30
+LSTM_UNITS = 16
+DENSE_UNITS = 4
+
+# # model configs
+# MAX_FEATURES = int(5e4)  # word count = 65306; char count = 10622
+# MAX_LEN = 200    # max_len = 189
+# EMBED_SIZE = 300
+# LSTM_UNITS = 64
+# DENSE_UNITS = 16
 
 # file configs
 MODEL_FILEPATH = os.path.join(
@@ -65,11 +75,13 @@ def get_model():
 
 
 def transform(df_text):
-    # Tokenize the sentences
+    # preprocess
+    df_text = df_text.progress_apply(preprocess)
+    # tokenize the sentences
     tokenizer = Tokenizer(num_words=MAX_FEATURES)
     tokenizer.fit_on_texts(list(df_text))
     X = tokenizer.texts_to_sequences(df_text)
 
-    # Pad the sentences
+    # pad the sentences
     X = pad_sequences(X, maxlen=MAX_LEN)
     return X
