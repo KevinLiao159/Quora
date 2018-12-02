@@ -4,8 +4,13 @@ Neural Network Trainer
 import operator
 import numpy as np
 from sklearn import utils
+import tensorflow as tf
 from keras import backend as K
 from keras.callbacks import EarlyStopping, ModelCheckpoint
+
+
+# decision threshold
+THRES = 0.3
 
 
 class NeuralNetworkClassifier:
@@ -39,10 +44,10 @@ class NeuralNetworkClassifier:
         self.model.compile(
             loss='binary_crossentropy',
             optimizer='adam',
-            metrics=[precision_score, recall_score, f1_score])
+            metrics=[precision_score, recall_score, f1_score, roc_auc_score])
 
     def predict(self, X):
-        return (self.predict_proba(X) > 0.5).astype(int)
+        return (self.predict_proba(X) > THRES).astype(int)
 
     def predict_proba(self, X):
         return self.model.predict(X)
@@ -65,7 +70,7 @@ class NeuralNetworkClassifier:
         # get callbacks
         callbacks.append(
             EarlyStopping(
-                monitor='val_f1_score',
+                monitor='val_roc_auc_score',
                 patience=3,
                 verbose=verbose
             )
@@ -74,7 +79,7 @@ class NeuralNetworkClassifier:
             callbacks.append(
                 ModelCheckpoint(
                     filepath=self.filepath,
-                    monitor='val_f1_score',
+                    monitor='val_roc_auc_score',
                     save_best_only=True,
                     save_weights_only=True
                 )
@@ -131,18 +136,18 @@ class NeuralNetworkClassifier:
 
     @property
     def best_param(self):
-        scores = self.model.history.history['val_f1_score']
+        scores = self.model.history.history['val_roc_auc_score']
         best_iteration, _ = max(enumerate(scores), key=operator.itemgetter(1))
         return best_iteration + 1
 
     @property
     def best_score(self):
-        scores = self.model.history.history['val_f1_score']
+        scores = self.model.history.history['val_roc_auc_score']
         _, best_val_f1 = max(enumerate(scores), key=operator.itemgetter(1))
         return best_val_f1
 
 
-def recall_score(y_true, y_proba, thres=0.5):
+def recall_score(y_true, y_proba, thres=THRES):
     """
     Recall metric
 
@@ -160,7 +165,7 @@ def recall_score(y_true, y_proba, thres=0.5):
     return recall
 
 
-def precision_score(y_true, y_proba, thres=0.5):
+def precision_score(y_true, y_proba, thres=THRES):
     """
     Precision metric
 
@@ -178,10 +183,19 @@ def precision_score(y_true, y_proba, thres=0.5):
     return precision
 
 
-def f1_score(y_true, y_proba, thres=0.5):
+def f1_score(y_true, y_proba, thres=THRES):
     """
     F1 metric: geometric mean of precision and recall
     """
     precision = precision_score(y_true, y_proba, thres)
     recall = recall_score(y_true, y_proba, thres)
     return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+
+
+def roc_auc_score(y_true, y_proba):
+    """
+    ROC AUC metric
+    """
+    roc_auc = tf.metrics.auc(y_true, y_proba)[1]
+    K.get_session().run(tf.local_variables_initializer())
+    return roc_auc
