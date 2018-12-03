@@ -15,7 +15,7 @@ from keras.layers import (Input, Embedding, Bidirectional,
 from keras.models import Model
 
 from neural_networks import NeuralNetworkClassifier
-from nlp import preprocess
+from nlp import preprocess, append_ngram
 from tqdm import tqdm
 tqdm.pandas()
 
@@ -27,12 +27,21 @@ tqdm.pandas()
 # LSTM_UNITS = 16
 # DENSE_UNITS = 4
 
-# model configs
-MAX_FEATURES = int(1.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
-MAX_LEN = 60    # mean_len = 12; Q99_len = 40; max_len = 189;
-EMBED_SIZE = 300
-LSTM_UNITS = 64
-DENSE_UNITS = 16
+# # word tokens configs
+# MAX_FEATURES = int(1.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
+# MAX_LEN = 70    # mean_len = 12; Q99_len = 40; max_len = 189;
+# EMBED_SIZE = 300
+# LSTM_UNITS = 64
+# DENSE_UNITS = 16
+
+# char tokens configs
+MAX_FEATURES = 2000
+# HACK_MAX_FEATURES = 5231
+MAX_LEN = 250
+EMBED_SIZE = 32
+LSTM_UNITS = 8
+DENSE_UNITS = 8
+
 
 # file configs
 MODEL_FILEPATH = os.path.join(
@@ -74,7 +83,7 @@ def get_model():
         filepath=MODEL_FILEPATH)
 
 
-def transform(df_text):
+def word_transformer(df_text):
     # preprocess
     df_text = df_text.progress_apply(preprocess)
     # tokenize the sentences
@@ -85,3 +94,31 @@ def transform(df_text):
     # pad the sentences
     X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='pre')
     return X
+
+
+def char_transformer(df_text, ngram=1):
+    # # preprocess
+    # df_text = df_text.progress_apply(preprocess)
+    # tokenize the sentences
+    tokenizer = Tokenizer(num_words=MAX_FEATURES, char_level=True)
+    tokenizer.fit_on_texts(list(df_text))
+    X = tokenizer.texts_to_sequences(df_text)
+    # add ngram features
+    if ngram > 1:
+        # NOTE: need to hack max features to work
+        X = append_ngram(X, ngram)
+
+    # pad the sentences
+    X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='post')
+    return X
+
+
+def transform(df_text, word=False, char=True):
+    if word and not char:
+        return word_transformer(df_text)
+    elif not word and char:
+        return char_transformer(df_text)
+    elif word and char:
+        return [word_transformer(df_text), char_transformer(df_text)]
+    else:
+        return
