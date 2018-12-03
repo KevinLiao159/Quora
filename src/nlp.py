@@ -34,7 +34,7 @@ def decontracted(text):
     # specific
     text = re.sub(r"(W|w)on(\'|\’)t", "will not", text)
     text = re.sub(r"(C|c)an(\'|\’)t", "can not", text)
-    text = re.sub(r"(Y|y)(\'|\’)all", "you all", text)
+    # text = re.sub(r"(Y|y)(\'|\’)all", "you all", text)
 
     # general
     text = re.sub(r"(I|i)(\'|\’)m", "i am", text)
@@ -53,7 +53,7 @@ def spacing_punctuation(text):
     """
     add space before and after punctuation and symbols
     """
-    re_tok = re.compile(f'([{string.punctuation}“”¨«»®´·º½¾¿¡§£₤$&#‘’''-])')
+    re_tok = re.compile(f'([{string.punctuation}“”¨«»®´·º½¾¿¡§£₤$&#‘’''])')
     return re_tok.sub(r' \1 ', text)
 
 
