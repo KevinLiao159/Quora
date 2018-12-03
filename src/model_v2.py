@@ -27,20 +27,20 @@ tqdm.pandas()
 # LSTM_UNITS = 16
 # DENSE_UNITS = 4
 
-# # word tokens configs
-# MAX_FEATURES = int(1.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
-# MAX_LEN = 70    # mean_len = 12; Q99_len = 40; max_len = 189;
-# EMBED_SIZE = 300
-# LSTM_UNITS = 64
-# DENSE_UNITS = 16
+# word tokens configs
+MAX_FEATURES = int(2e5)  # total word count = 227,538; clean word count = 186,551   # noqa
+MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
+EMBED_SIZE = 300
+LSTM_UNITS = 64
+DENSE_UNITS = 16
 
-# char tokens configs
-MAX_FEATURES = 2000
-# HACK_MAX_FEATURES = 5231
-MAX_LEN = 250
-EMBED_SIZE = 32
-LSTM_UNITS = 8
-DENSE_UNITS = 8
+# # char tokens configs
+# MAX_FEATURES = 2000
+# # HACK_MAX_FEATURES = 5231
+# MAX_LEN = 250
+# EMBED_SIZE = 32
+# LSTM_UNITS = 8
+# DENSE_UNITS = 8
 
 
 # file configs
@@ -92,7 +92,7 @@ def word_transformer(df_text):
     X = tokenizer.texts_to_sequences(df_text)
 
     # pad the sentences
-    X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='pre')
+    X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='post')
     return X
 
 
@@ -113,7 +113,7 @@ def char_transformer(df_text, ngram=1):
     return X
 
 
-def transform(df_text, word=False, char=True):
+def transform(df_text, word=True, char=False):
     if word and not char:
         return word_transformer(df_text)
     elif not word and char:
