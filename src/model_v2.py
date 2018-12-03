@@ -79,7 +79,7 @@ def get_model():
     print(model.summary())
     return NeuralNetworkClassifier(
         model,
-        balancing_class_weight=False,
+        balancing_class_weight=True,
         filepath=MODEL_FILEPATH)
 
 
