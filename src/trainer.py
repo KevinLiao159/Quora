@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # config
     RANDOM_STATE = 99
     SHUFFLE = True
-    TEST_SIZE = 0.20
+    TEST_SIZE = 0.50
     # get args
     args = parse_args()
     datapath = args.datapath

@@ -9,7 +9,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
 # decision threshold
-THRES = 0.3
+THRES = 0.4
 
 
 class NeuralNetworkClassifier:
@@ -151,13 +151,21 @@ class NeuralNetworkClassifier:
     @property
     def best_param(self):
         scores = self.model.history.history[self.val_score]
-        best_iteration, _ = max(enumerate(scores), key=operator.itemgetter(1))
+        if 'loss' in self.val_score:
+            func = min
+        else:
+            func = max
+        best_iteration, _ = func(enumerate(scores), key=operator.itemgetter(1))
         return best_iteration + 1
 
     @property
     def best_score(self):
         scores = self.model.history.history[self.val_score]
-        _, best_val_f1 = max(enumerate(scores), key=operator.itemgetter(1))
+        if 'loss' in self.val_score:
+            func = min
+        else:
+            func = max
+        _, best_val_f1 = func(enumerate(scores), key=operator.itemgetter(1))
         return best_val_f1
 
 
