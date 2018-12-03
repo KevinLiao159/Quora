@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # config
     RANDOM_STATE = 99
     SHUFFLE = True
-    TEST_SIZE = 0.20
+    TEST_SIZE = 0.50
     # get args
     args = parse_args()
     datapath = args.datapath
@@ -143,4 +143,5 @@ if __name__ == '__main__':
             filepath = os.path.join(datapath, 'trainer_{}.csv'.format(model))
             pd.concat(score_dfs, axis=1).to_csv(filepath)
             print('Save CV score file to {}'.format(filepath))
+
     print('Entire program is done and it took {:.2f}s'.format(time.time() - t0)) # noqa

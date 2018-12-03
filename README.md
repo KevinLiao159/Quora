@@ -50,7 +50,7 @@ Fifth layer: A concatenation of the last state, maximum pool, average pool and t
 Sixth layer: output dense layer.
 
 Batch size: 512. I found that bigger batch size makes results more stable.
-Epochs: 15.
+Epochs: 15
 Sequence length: 900.
 Optimizer: Adam with clipped gradient.
 
@@ -108,6 +108,8 @@ model_6: ensemble and PL
 https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings
 
 https://www.kaggle.com/sudalairajkumar/a-look-at-different-embeddings
+
+https://www.kaggle.com/shujian/single-rnn-with-5-folds-snapshot-ensemble
 
 https://www.kaggle.com/thebrownviking20/analyzing-quora-for-the-insinceres
 
