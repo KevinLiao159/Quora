@@ -2,6 +2,7 @@ import re
 import string
 import unicodedata
 import nltk
+import numpy as np
 import pandas as pd
 
 """
@@ -34,7 +35,7 @@ def decontracted(text):
     # specific
     text = re.sub(r"(W|w)on(\'|\’)t", "will not", text)
     text = re.sub(r"(C|c)an(\'|\’)t", "can not", text)
-    # text = re.sub(r"(Y|y)(\'|\’)all", "you all", text)
+    text = re.sub(r"(Y|y)(\'|\’)all", "you all", text)
 
     # general
     text = re.sub(r"(I|i)(\'|\’)m", "i am", text)
@@ -292,3 +293,90 @@ def count_feature_transformer(df_text, col='question_text'):
     df_text["has_emphasize_equal"] = df_text[col].apply(lambda x: count_regexp_occ(r"\={2}.+\={2}", x))   # noqa
     df_text["has_emphasize_quotes"] = df_text[col].apply(lambda x: count_regexp_occ(r"\"{4}\S+\"{4}", x)) # noqa
     return df_text[[c for c in df_text.columns if c != col]]
+
+
+"""
+Extra - for keras
+
+1. fast text
+    link: https://github.com/keras-team/keras/blob/master/examples/imdb_fasttext.py # noqa
+"""
+
+
+def create_ngram_set(input_list, ngram_value=2):
+    """
+    Extract a set of n-grams from a list of integers.
+    >>> create_ngram_set([1, 4, 9, 4, 1, 4], ngram_value=2)
+    {(4, 9), (4, 1), (1, 4), (9, 4)}
+    >>> create_ngram_set([1, 4, 9, 4, 1, 4], ngram_value=3)
+    [(1, 4, 9), (4, 9, 4), (9, 4, 1), (4, 1, 4)]
+    """
+    return set(zip(*[input_list[i:] for i in range(ngram_value)]))
+
+
+def add_ngram(sequences, token_indice, ngram_range=2):
+    """
+    Augment the input list of list (sequences) by appending n-grams values.
+    Example: adding bi-gram
+    >>> sequences = [[1, 3, 4, 5], [1, 3, 7, 9, 2]]
+    >>> token_indice = {(1, 3): 1337, (9, 2): 42, (4, 5): 2017}
+    >>> add_ngram(sequences, token_indice, ngram_range=2)
+    [[1, 3, 4, 5, 1337, 2017], [1, 3, 7, 9, 2, 1337, 42]]
+    Example: adding tri-gram
+    >>> sequences = [[1, 3, 4, 5], [1, 3, 7, 9, 2]]
+    >>> token_indice = {(1, 3): 1337, (9, 2): 42, (4, 5): 2017, (7, 9, 2): 2018}    # noqa
+    >>> add_ngram(sequences, token_indice, ngram_range=3)
+    [[1, 3, 4, 5, 1337, 2017], [1, 3, 7, 9, 2, 1337, 42, 2018]]
+    """
+    new_sequences = []
+    for input_list in sequences:
+        new_list = input_list[:]
+        for ngram_value in range(2, ngram_range + 1):
+            for i in range(len(new_list) - ngram_value + 1):
+                ngram = tuple(new_list[i:i + ngram_value])
+                if ngram in token_indice:
+                    new_list.append(token_indice[ngram])
+        new_sequences.append(new_list)
+
+    return new_sequences
+
+
+def append_ngram(X, ngram=2):
+    """
+    Append ngram to sequences of input list.
+    This is a step between Keras.tokenize and Keras.pad_sequences
+
+    Parameters
+    ----------
+    X: list of list of token indices
+
+    ngram: int
+
+    Return
+    ------
+    X: list of list of original tokens and ngram tokens
+    """
+    print('adding {}-gram features ......'.format(ngram))
+    # iterate seq to find num features and build ngram set
+    num_features = []
+    ngram_set = set()
+    for input_list in X:
+        # get max features to avoid collision with existing features
+        num_features.append(max(input_list))
+        # create set of unique n-gram from the training set
+        for i in range(2, ngram + 1):
+            set_of_ngram = create_ngram_set(input_list, ngram_value=i)
+            ngram_set.update(set_of_ngram)
+    # get max features from original tokens
+    max_features = max(num_features)
+    # map ngram to int and avoid collision with existing features
+    start_index = max_features + 1
+    token_indice = {v: k + start_index for k, v in enumerate(ngram_set)}
+    indice_token = {token_indice[k]: k for k in token_indice}
+    # get new max features after appending ngram features
+    new_max_features = np.max(list(indice_token.keys())) + 1
+    print('there is {} features in total after '
+          'adding ngram'.format(new_max_features))
+    # augmenting data with n-grams features
+    X = add_ngram(X, token_indice, ngram)
+    return X

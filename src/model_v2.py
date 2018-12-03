@@ -15,7 +15,7 @@ from keras.layers import (Input, Embedding, Bidirectional,
 from keras.models import Model
 
 from neural_networks import NeuralNetworkClassifier
-from nlp import preprocess
+from nlp import preprocess, append_ngram
 from tqdm import tqdm
 tqdm.pandas()
 
@@ -36,6 +36,7 @@ tqdm.pandas()
 
 # char tokens configs
 MAX_FEATURES = 2000
+# HACK_MAX_FEATURES = 5231
 MAX_LEN = 250
 EMBED_SIZE = 32
 LSTM_UNITS = 8
@@ -95,16 +96,20 @@ def word_transformer(df_text):
     return X
 
 
-def char_transformer(df_text):
+def char_transformer(df_text, ngram=1):
     # # preprocess
     # df_text = df_text.progress_apply(preprocess)
     # tokenize the sentences
     tokenizer = Tokenizer(num_words=MAX_FEATURES, char_level=True)
     tokenizer.fit_on_texts(list(df_text))
     X = tokenizer.texts_to_sequences(df_text)
+    # add ngram features
+    if ngram > 1:
+        # NOTE: need to hack max features to work
+        X = append_ngram(X, ngram)
 
     # pad the sentences
-    X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='pre')
+    X = pad_sequences(X, maxlen=MAX_LEN, padding='pre', truncating='post')
     return X
 
 
