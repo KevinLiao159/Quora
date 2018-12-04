@@ -10,7 +10,7 @@ layers:
 import os
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from keras.layers import (Input, Embedding, Bidirectional,
+from keras.layers import (Input, Embedding, SpatialDropout1D, Bidirectional,
                           LSTM, GlobalMaxPool1D, Dense)
 from keras.models import Model
 
@@ -32,7 +32,8 @@ MAX_FEATURES = int(2e5)  # total word count = 227,538; clean word count = 186,55
 MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
 EMBED_SIZE = 300
 LSTM_UNITS = 40
-DENSE_UNITS = 16
+DENSE_UNITS_1 = 32
+DENSE_UNITS_2 = 8
 
 # # char tokens configs
 # MAX_FEATURES = 2000
@@ -59,16 +60,19 @@ def get_network():
         output_dim=EMBED_SIZE,
         name='embedding'
     )(input_layer)
-    # 2. bidirectional_lstm
+    # 2. dropout
+    x = SpatialDropout1D(rate=0.1)(x)
+    # 3. bidirectional_lstm
     x = Bidirectional(
         layer=LSTM(LSTM_UNITS, return_sequences=True),
         name='bidirectional_lstm'
     )(x)
-    # 3. global_max_pooling1d
+    # 4. global_max_pooling1d
     x = GlobalMaxPool1D(name='global_max_pooling1d')(x)
-    # 4. dense
-    x = Dense(units=DENSE_UNITS, activation='relu', name='dense')(x)
-    # 5. output (sigmoid)
+    # 5. dense
+    x = Dense(units=DENSE_UNITS_1, activation='relu', name='dense_1')(x)
+    x = Dense(units=DENSE_UNITS_2, activation='relu', name='dense_2')(x)
+    # 6. output (sigmoid)
     output_layer = Dense(units=1, activation='sigmoid', name='output')(x)
     return Model(inputs=input_layer, outputs=output_layer)
 

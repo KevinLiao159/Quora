@@ -9,7 +9,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 
 # decision threshold
-THRES = 0.4
+THRES = 0.35
 
 
 class NeuralNetworkClassifier:
