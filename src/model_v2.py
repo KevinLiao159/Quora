@@ -33,7 +33,7 @@ MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
 EMBED_SIZE = 300
 LSTM_UNITS = 40
 DENSE_UNITS_1 = 32
-DENSE_UNITS_2 = 8
+DENSE_UNITS_2 = 16
 
 # # char tokens configs
 # MAX_FEATURES = 2000
