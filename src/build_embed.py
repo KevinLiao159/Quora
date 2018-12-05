@@ -61,7 +61,7 @@ def create_embedding_weights(word_index, word_embedding, max_features):
     embedding_weights = np.random.normal(embedding_mean, embedding_std, (a, b))
     # mapping
     for word, idx in word_index.items():
-        if idx > a:
+        if idx >= a:
             continue
         word_vec = word_embedding.get(word, None)
         if word_vec is not None:
