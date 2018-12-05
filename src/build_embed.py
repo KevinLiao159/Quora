@@ -24,6 +24,7 @@ def load_word_embedding(filepath):
     def _get_vec(word, *arr):
         return word, np.asarray(arr, dtype='float32')
 
+    print('load word embedding ......')
     word_embedding = dict(_get_vec(*w.split(' ')) for w in open(filepath))
     return word_embedding
 
@@ -49,15 +50,17 @@ def create_embedding_weights(word_index, word_embedding, max_features):
     ------
     embedding weights: np.array, with shape (number of words, 300)
     """
+    print('create word embedding weights ......')
     # get entire embedding matrix
     mat_embedding = np.stack(word_embedding.values())
     # get shape
     a, b = min(max_features, len(word_index)), mat_embedding.shape[1]
+    print('embedding weights matrix with shape: ({}, {})'.format(a, b))
     # init embedding weight matrix
     embedding_mean, embedding_std = mat_embedding.mean(), mat_embedding.std()
     embedding_weights = np.random.normal(embedding_mean, embedding_std, (a, b))
     # mapping
-    for idx, word in word_index.items():
+    for word, idx in word_index.items():
         if idx > a:
             continue
         word_vec = word_embedding.get(word, None)
