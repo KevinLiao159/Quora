@@ -35,18 +35,24 @@ def decontracted(text):
     # specific
     text = re.sub(r"(W|w)on(\'|\’)t", "will not", text)
     text = re.sub(r"(C|c)an(\'|\’)t", "can not", text)
-    text = re.sub(r"(Y|y)(\'|\’)all", "you all", text)
+    text = re.sub(r"y(\'|\’)all", "you all", text)
+    text = re.sub(r"Y(\'|\’)(A|a)ll", "You All", text)
 
     # general
-    text = re.sub(r"(I|i)(\'|\’)m", "i am", text)
-    text = re.sub(r"(A|a)in(\'|\’)t", "is not", text)
+    text = re.sub(r"i(\'|\’)m", "i am", text)
+    text = re.sub(r"I(\'|\’)m", "I am", text)
+    text = re.sub(r"I(\'|\’)M", "I Am", text)
+    text = re.sub(r"ain(\'|\’)t", "is not", text)
+    text = re.sub(r"Ain(\'|\’)t", "Is Not", text)
     text = re.sub(r"n(\'|\’)t", " not", text)
+    text = re.sub(r"N(\'|\’)t", " Not", text)
     text = re.sub(r"(\'|\’)re", " are", text)
     text = re.sub(r"(\'|\’)s", " is", text)
     text = re.sub(r"(\'|\’)d", " would", text)
     text = re.sub(r"(\'|\’)ll", " will", text)
     text = re.sub(r"(\'|\’)t", " not", text)
     text = re.sub(r"(\'|\’)ve", " have", text)
+
     return text
 
 
@@ -64,6 +70,14 @@ def remove_punctuation(text):
     """
     re_tok = re.compile(f'([{string.punctuation}])')
     return re_tok.sub(' ', text)
+
+
+def spacing_digit(text):
+    """
+    add space before and after digits
+    """
+    re_tok = re.compile('([0-9])')
+    return re_tok.sub(r' \1 ', text)
 
 
 def spacing_number(text):
@@ -107,22 +121,24 @@ def preprocess(text, remove_punct=False, remove_num=True):
     """
     # 1. normalize
     text = normalize_unicode(text)
-    # 2. to lower
+    # 2. remove new line
+    text = remove_newline(text)
+    # 3. to lower
     text = text.lower()
-    # 3. de-contract
+    # 4. de-contract
     text = decontracted(text)
-    # 4. space
+    # 5. space
     text = spacing_punctuation(text)
     text = spacing_number(text)
     # (optional)
     if remove_punct:
         text = remove_punctuation(text)
-    # 5. handle number
+    # 6. handle number
     if remove_num:
         text = remove_number(text)
     else:
         text = clean_number(text)
-    # 6. remove space
+    # 7. remove space
     text = remove_space(text)
     return text
 

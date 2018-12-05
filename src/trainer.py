@@ -37,7 +37,7 @@ def train_and_eval(X_train, y_train, X_val, y_val, module):
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="Quora Insincere Questions Classification",
-        description="Run Model Evaluation and Create Submission")
+        description="Run Model Validation and Pick the Best Best Param")
     parser.add_argument('--datapath', nargs='?', default=os.environ['DATA_PATH'],   # noqa
                         help='input data path')
     parser.add_argument('--model', nargs='?', default='model_v1',
