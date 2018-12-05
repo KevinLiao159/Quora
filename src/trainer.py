@@ -2,10 +2,9 @@ import os
 import time
 import argparse
 import pandas as pd
-from eval import load_and_preprocess
 from sklearn.model_selection import train_test_split
 
-from utils import timer
+from utils import timer, load_and_preprocess
 
 
 def train_and_eval(X_train, y_train, X_val, y_val, module):
@@ -60,7 +59,7 @@ if __name__ == '__main__':
     module = __import__(model)
     # 2. load and preprocess data
     with timer("Load and Preprocess"):
-        df_train, X_train = load_and_preprocess(datapath, module)
+        df_train, _, X_train, _ = load_and_preprocess(datapath, module)
     # 3. train and eval
     with timer('Trainning and Tuning'):
         X_t, X_v, y_t, y_v = train_test_split(

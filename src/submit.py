@@ -4,36 +4,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from utils import timer
-
-
-def load_and_preprocess(datapath, module):
-    """
-    load and preprocess
-    Parameters
-    ----------
-    datapath: str, data directory that contains train.csv and test.csv
-    module: a python module
-    Returns
-    -------
-    df_train, df_test: dataframe with raw text
-    X_train, X_test: matrix with proper features
-    """
-    print("loading data ......")
-    df_train = pd.read_csv(os.path.join(datapath, "train.csv"))
-    df_test = pd.read_csv(os.path.join(datapath, "test.csv"))
-    train_test_cut = df_train.shape[0]
-    print("train data with shape : ", df_train.shape)
-    print("test data with shape : ", df_test.shape)
-    # concat text data into single dataframe
-    df_all = pd.concat(
-        [df_train[['question_text']], df_test[['question_text']]],
-        axis=0).reset_index(drop=True)
-    # transform
-    X_features = module.transform(df_all['question_text'])
-    X_train = X_features[:train_test_cut]
-    X_test = X_features[train_test_cut:]
-    return df_train, df_test, X_train, X_test
+from utils import timer, load_and_preprocess
 
 
 def create_submission(X_train, y_train, X_test, df_test, thres, module):

@@ -7,31 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn import metrics
 
-from utils import timer, load_trained_model
-
-
-def load_and_preprocess(datapath, module):
-    """
-    load and preprocess
-
-    Parameters
-    ----------
-    datapath: str, data directory that contains train.csv
-
-    module: a python module
-
-    Returns
-    -------
-    df_train: dataframe with raw text
-
-    X_train: train data with proper features for model
-    """
-    print("loading data ......")
-    df_train = pd.read_csv(os.path.join(datapath, "train.csv"))
-    print("train data with shape : ", df_train.shape)
-    # transform
-    X_train = module.transform(df_train['question_text'])
-    return df_train, X_train
+from utils import timer, load_and_preprocess, load_trained_model
 
 
 def fit_and_eval(X_train, y_train, X_val, y_val, module, pretrained=False):
@@ -114,7 +90,7 @@ if __name__ == '__main__':
     module = __import__(model)
     # 2. load and preprocess data
     with timer("Load and Preprocess"):
-        df_train, X_train = load_and_preprocess(datapath, module)
+        df_train, _, X_train, _ = load_and_preprocess(datapath, module)
     # 3. fit and eval
     with timer('Fitting and Validating'):
         if cv == 2:
