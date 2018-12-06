@@ -55,12 +55,12 @@ EMBED_FILEPATH = os.path.join(
 )
 
 
-def get_network():
+def get_network(embed_filepath):
     input_layer = Input(shape=(MAX_LEN, ), name='input')
     # 1. embedding layer
     # get embedding weights
     print('load pre-trained embedding weights ......')
-    embed_weights = pd.read_pickle(EMBED_FILEPATH)
+    embed_weights = pd.read_pickle(embed_filepath)
     input_dim = embed_weights.shape[0]
     output_dim = embed_weights.shape[1]
     x = Embedding(
@@ -68,7 +68,7 @@ def get_network():
         output_dim=output_dim,
         weights=[embed_weights],
         trainable=False,
-        name='embedding_glove'
+        name='embedding'
     )(input_layer)
     # clean up
     del embed_weights, input_dim, output_dim
@@ -96,7 +96,7 @@ def get_network():
 
 def get_model():
     print('build network ......')
-    model = get_network()
+    model = get_network(embed_filepath=EMBED_FILEPATH)
     print(model.summary())
     return NeuralNetworkClassifier(
         model,
