@@ -1,11 +1,12 @@
 """
-NN baseline model
+NN model with glove embeddings
 layers:
     1. embedding layer (glove)
-    2. bidirectional_lstm
-    3. global_max_pooling1d
-    4. dense
-    5. output (sigmoid)
+    2. SpatialDropout1D (0.1)
+    3. bidirectional lstm & gru
+    4. global_max_pooling1d
+    5. dense 32 & 16
+    6. output (sigmoid)
 """
 import os
 import gc
@@ -13,7 +14,7 @@ import pandas as pd
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.layers import (Input, Embedding, SpatialDropout1D, Bidirectional,
-                          LSTM, GlobalMaxPool1D, Dense)
+                          LSTM, GRU, GlobalMaxPool1D, Dense)
 from keras.models import Model
 
 from neural_networks import NeuralNetworkClassifier
@@ -28,14 +29,14 @@ tqdm.pandas()
 # # toy configs
 # MAX_FEATURES = int(5e3)
 # MAX_LEN = 20
-# LSTM_UNITS = 16
+# RNN_UNITS = 16
 # DENSE_UNITS_1 = 8
 # DENSE_UNITS_2 = 4
 
 # model configs
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
 MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
-LSTM_UNITS = 40
+RNN_UNITS = 40
 DENSE_UNITS_1 = 32
 DENSE_UNITS_2 = 16
 
@@ -44,7 +45,7 @@ DENSE_UNITS_2 = 16
 MODEL_FILEPATH = os.path.join(
     os.environ['DATA_PATH'],
     'models',
-    'model_v3.hdf5'
+    'model_v30.hdf5'
 )
 EMBED_FILEPATH = os.path.join(
     os.environ['DATA_PATH'],
@@ -74,10 +75,14 @@ def get_network():
     gc.collect()
     # 2. dropout
     x = SpatialDropout1D(rate=0.1)(x)
-    # 3. bidirectional_lstm
+    # 3. bidirectional lstm & gru
     x = Bidirectional(
-        layer=LSTM(LSTM_UNITS, return_sequences=True),
+        layer=LSTM(RNN_UNITS, return_sequences=True),
         name='bidirectional_lstm'
+    )(x)
+    x = Bidirectional(
+        layer=GRU(RNN_UNITS, return_sequences=True),
+        name='bidirectional_gru'
     )(x)
     # 4. global_max_pooling1d
     x = GlobalMaxPool1D(name='global_max_pooling1d')(x)

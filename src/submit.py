@@ -44,9 +44,9 @@ def parse_args():
         description="Create Submission")
     parser.add_argument('--datapath', nargs='?', default=os.environ['DATA_PATH'],   # noqa
                         help='input data path')
-    parser.add_argument('--model', nargs='?', default='model_v3',
+    parser.add_argument('--model', nargs='?', default='model_v30',
                         help='model version')
-    parser.add_argument('--thres', type=float, default=0.23,
+    parser.add_argument('--thres', type=float, default=0.35,
                         help='decision threshold for classification')
     return parser.parse_args()
 

@@ -39,7 +39,7 @@ def parse_args():
         description="Run Model Validation and Pick the Best Best Param")
     parser.add_argument('--datapath', nargs='?', default=os.environ['DATA_PATH'],   # noqa
                         help='input data path')
-    parser.add_argument('--model', nargs='?', default='model_v3',
+    parser.add_argument('--model', nargs='?', default='model_v30',
                         help='model version')
     return parser.parse_args()
 
