@@ -8,6 +8,7 @@ layers:
     5. output (sigmoid)
 """
 import os
+import gc
 import pandas as pd
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -27,14 +28,13 @@ tqdm.pandas()
 # # toy configs
 # MAX_FEATURES = int(5e3)
 # MAX_LEN = 20
-# EMBED_SIZE = 30
 # LSTM_UNITS = 16
-# DENSE_UNITS = 4
+# DENSE_UNITS_1 = 8
+# DENSE_UNITS_2 = 4
 
 # model configs
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
 MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
-EMBED_SIZE = 300
 LSTM_UNITS = 40
 DENSE_UNITS_1 = 32
 DENSE_UNITS_2 = 16
@@ -59,13 +59,18 @@ def get_network():
     # 1. embedding layer
     # get embedding weights
     embed_weights = pd.read_pickle(EMBED_FILEPATH)
+    input_dim = embed_weights.shape[0]
+    output_dim = embed_weights.shape[1]
     x = Embedding(
-        input_dim=MAX_FEATURES,
-        output_dim=EMBED_SIZE,  # embed_weights.shape[0]
+        input_dim=input_dim,
+        output_dim=output_dim,
         weights=[embed_weights],
         trainable=False,
         name='embedding_glove'
     )(input_layer)
+    # clean up
+    del embed_weights, input_dim, output_dim
+    gc.collect()
     # 2. dropout
     x = SpatialDropout1D(rate=0.1)(x)
     # 3. bidirectional_lstm
