@@ -35,24 +35,18 @@ def decontracted(text):
     # specific
     text = re.sub(r"(W|w)on(\'|\’)t", "will not", text)
     text = re.sub(r"(C|c)an(\'|\’)t", "can not", text)
-    text = re.sub(r"y(\'|\’)all", "you all", text)
-    text = re.sub(r"Y(\'|\’)(A|a)ll", "You All", text)
+    text = re.sub(r"(Y|y)(\'|\’)all", "you all", text)
 
     # general
-    text = re.sub(r"i(\'|\’)m", "i am", text)
-    text = re.sub(r"I(\'|\’)m", "I am", text)
-    text = re.sub(r"I(\'|\’)M", "I Am", text)
-    text = re.sub(r"ain(\'|\’)t", "is not", text)
-    text = re.sub(r"Ain(\'|\’)t", "Is Not", text)
+    text = re.sub(r"(I|i)(\'|\’)m", "i am", text)
+    text = re.sub(r"(A|a)in(\'|\’)t", "is not", text)
     text = re.sub(r"n(\'|\’)t", " not", text)
-    text = re.sub(r"N(\'|\’)t", " Not", text)
     text = re.sub(r"(\'|\’)re", " are", text)
     text = re.sub(r"(\'|\’)s", " is", text)
     text = re.sub(r"(\'|\’)d", " would", text)
     text = re.sub(r"(\'|\’)ll", " will", text)
     text = re.sub(r"(\'|\’)t", " not", text)
     text = re.sub(r"(\'|\’)ve", " have", text)
-
     return text
 
 

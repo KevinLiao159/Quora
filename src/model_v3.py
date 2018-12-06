@@ -58,6 +58,7 @@ def get_network():
     input_layer = Input(shape=(MAX_LEN, ), name='input')
     # 1. embedding layer
     # get embedding weights
+    print('load pre-trained embedding weights ......')
     embed_weights = pd.read_pickle(EMBED_FILEPATH)
     input_dim = embed_weights.shape[0]
     output_dim = embed_weights.shape[1]
@@ -89,8 +90,8 @@ def get_network():
 
 
 def get_model():
-    model = get_network()
     print('build network ......')
+    model = get_network()
     print(model.summary())
     return NeuralNetworkClassifier(
         model,

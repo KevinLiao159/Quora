@@ -129,13 +129,16 @@ if __name__ == '__main__':
             [df_train[['question_text']], df_test[['question_text']]],
             axis=0).reset_index(drop=True)
         # get word index
+        print('tokenizing text ......')
         _, tokenizer = module.tokenize(df_all['question_text'])
         word_index = tokenizer.word_index
     # 3. create embedding weights matrix
     with timer("Create Embedding Weights Matrix"):
         # load word embeddings
+        print('loading embedding file')
         word_embed = load_word_embedding(embed_filepath)
         # create embedding weights matrix
+        print('create embedding weights ......')
         embed_weights = create_embedding_weights(
             word_index,
             word_embed,
@@ -145,5 +148,6 @@ if __name__ == '__main__':
             embed_filepath.rsplit('/', 1)[0],
             '{}.pkl'.format(embedding))
         pd.to_pickle(embed_weights, filepath_to_save)
+        print('save embedding weights to {}'.format(filepath_to_save))
     # record time spent
     print('Entire program is done and it took {:.2f}s'.format(time.time() - t0)) # noqa
