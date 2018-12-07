@@ -16,6 +16,9 @@ from nlp import (normalize_unicode, remove_newline, decontracted,
                  remove_space)
 from neural_networks import NeuralNetworkClassifier
 
+from tqdm import tqdm
+tqdm.pandas()
+
 
 # model configs
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
