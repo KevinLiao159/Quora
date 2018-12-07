@@ -112,6 +112,13 @@ text cleaning
 def preprocess(text, remove_num=True):
     """
     preprocess text into clean text for tokenization
+
+    NOTE:
+        1. glove supports uppper case words
+        2. glove supports digit
+        3. glove supports punctuation
+        5. glove supports domains e.g. www.apple.com
+        6. glove supports misspelled words e.g. FUCKKK
     """
     # 1. normalize
     text = normalize_unicode(text)

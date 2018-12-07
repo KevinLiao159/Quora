@@ -25,7 +25,17 @@ def load_word_embedding(filepath):
         return word, np.asarray(arr, dtype='float32')
 
     print('load word embedding ......')
-    word_embedding = dict(_get_vec(*w.split(' ')) for w in open(filepath))
+    try:
+        word_embedding = dict(_get_vec(*w.split(' ')) for w in open(filepath))
+    except UnicodeDecodeError:
+        word_embedding = dict(_get_vec(*w.split(' ')) for w in open(
+            filepath, encoding="utf8", errors='ignore'))
+    # sanity check word vector length
+    for word, vec in word_embedding.items():
+        if len(vec) != 300:
+            print('size error! delete token {} from embedding'.format(word))
+            del word_embedding[word]
+
     return word_embedding
 
 
@@ -77,7 +87,7 @@ def parse_args():
                         help='input data path')
     parser.add_argument('--embedding', nargs='?', default='glove',
                         help='choose word embedding')
-    parser.add_argument('--model', nargs='?', default='model_v3',
+    parser.add_argument('--model', nargs='?', default='model_v30',
                         help='model version')
     return parser.parse_args()
 
