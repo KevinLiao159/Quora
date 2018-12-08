@@ -10,6 +10,7 @@ layers:
 """
 import os
 import gc
+import re
 import pandas as pd
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -109,7 +110,143 @@ text cleaning
 """
 
 
-def preprocess(text, remove_num=True):
+def clean_misspell(text):
+    """
+    misspell list (quora vs. glove)
+    """
+    misspell_to_sub = {
+        '(T|t)erroristan': 'terrorist Pakistan',
+        'BIMARU': 'Bihar, Madhya Pradesh, Rajasthan, Uttar Pradesh',
+        '(H|h)induphobic': 'Hindu phobic',
+        'Babchenko': 'Arkady Arkadyevich Babchenko faked death',
+        'Boshniaks': 'Bosniaks',
+        'Dravidanadu': 'Dravida Nadu',
+        'mysoginists': 'misogynists',
+        'MGTOWS': 'Men Going Their Own Way',
+        'mongloid': 'Mongoloid',
+        'unsincere': 'insincere',
+        'meninism': 'male feminism',
+        'jewplicate': 'jewish replicate',
+        'unoin': 'Union',
+        'daesh': 'Islamic State of Iraq and the Levant',
+        'Kalergi': 'Coudenhove-Kalergi',
+        ' apist': ' Ape',
+        '(B|b)hakts': 'Bhakt',
+        'Tambrahms': 'Tamil Brahmin',
+        'Pahul': 'Amrit Sanskar',
+        'SJW(s|)': 'social justice warrior',
+        'incel(s|)': 'involuntary celibates',
+        'emiratis': 'Emiratis',
+        'weatern': 'western',
+        'Pizzagate': 'Pizzagate conspiracy theory',
+        'naïve': 'naive',
+        'Skripal': 'Sergei Skripal',
+        '(R|r)emainers': 'remainer',
+        'antibrahmin': 'anti Brahminism',
+        'HYPSM': ' Harvard, Yale, Princeton, Stanford, MIT',
+        'HYPS': ' Harvard, Yale, Princeton, Stanford',
+        'kompromat': 'compromising material',
+        '(T|t)harki': 'pervert',
+        'mastuburate': 'masturbate',
+        'Zoë': 'Zoe',
+        'indans': 'Indian',
+        'xender': 'gender',
+        'Naxali': 'Naxalite',
+        'Bathla': 'Namit Bathla',
+        'Mewani': 'Indian politician Jignesh Mevani',
+        'clichéd': 'cliché',
+        'cliché(s|)': 'cliché',
+        'Wjy': 'Why',
+        'Fadnavis': 'Indian politician Devendra Fadnavis',
+        'Awadesh': 'Indian engineer Awdhesh Singh',
+        'Awdhesh': 'Indian engineer Awdhesh Singh',
+        'Khalistanis': 'Sikh separatist movement',
+        'madheshi': 'Madheshi',
+        'Quorans': 'Quoran',
+        'BNBR': 'Be Nice, Be Respectful',
+        'Bolsonaro': 'Jair Bolsonaro',
+        'XXXTentacion': 'Tentacion',
+        'Padmavat': 'Indian Movie Padmaavat',
+        'Žižek': 'Slovenian philosopher Slavoj Žižek',
+        'Adityanath': 'Indian monk Yogi Adityanath',
+        '(B|b)rexit': 'British Exit',
+        'jallikattu': 'Jallikattu',
+        'fortnite': 'Fortnite',
+        'Swachh': 'Swachh Bharat mission campaign',
+        'Qoura': 'Quora',
+        'narcissit': 'narcissist'
+    }
+    for mis, sub in misspell_to_sub.items():
+        text = re.sub(mis, sub, text)
+    return text
+
+
+def spacing_misspell(text):
+    """
+    'deadbody' -> 'dead body'
+    """
+    misspell_list = [
+        'body',
+        '(D|d)ead',
+        '(N|n)orth',
+        '(K|k)orea',
+        'matrix',
+        '(S|s)hit',
+        '(F|f)uck',
+        'Trump',
+        '(A|a)nti',
+        '(W|w)hy',
+        '(A|a)nd',
+        'bait',
+        'care',
+    ]
+    for word in misspell_list:
+        text = re.sub(r"({})".format(word), r" \1 ", text)
+    return text
+
+
+def clean_latex(text):
+    """
+    convert r"[math]\vec{x} + \vec{y}" to English
+    """
+    pattern_to_sub = {
+        r'\[math\]': ' LaTex math ',
+        r'\[\/math\]': ' LaTex math ',
+        r'\\mathrm': ' LaTex math mode ',
+        r'\\mathbb': ' LaTex math mode ',
+        r'\\boxed': ' LaTex equation ',
+        r'\\begin': ' LaTex equation ',
+        r'\\end': ' LaTex equation ',
+        r'\\left': ' LaTex equation ',
+        r'\\right': ' LaTex equation ',
+        r'\\(over|under)brace': ' LaTex equation ',
+        r'\\text': ' LaTex equation ',
+        r'\\vec': ' vector ',
+        r'\\var': ' variable ',
+        r'\\theta': ' theta ',
+        r'\\mu': ' average ',
+        r'\\min': ' minimum ',
+        r'\\max': ' maximum ',
+        r'\\sum': ' + ',
+        r'\\times': ' * ',
+        r'\\cdot': ' * ',
+        r'\\hat': ' ^ ',
+        r'\\frac': ' / ',
+        r'\\div': ' / ',
+        r'\\sin': ' Sine ',
+        r'\\cos': ' Cosine ',
+        r'\\tan': ' Tangent ',
+        r'\\infty': ' infinity ',
+        r'\\int': ' integer ',
+        r'\\in': ' in ',
+        r'\\': ' LaTex ',
+    }
+    for pat, sub in pattern_to_sub.items():
+        text = re.sub(pat, sub, text)
+    return text
+
+
+def preprocess(text, remove_num=False):
     """
     preprocess text into clean text for tokenization
 
@@ -126,14 +263,20 @@ def preprocess(text, remove_num=True):
     text = remove_newline(text)
     # 3. de-contract
     text = decontracted(text)
-    # 4. space
+    # 4. clean misspell
+    text = clean_misspell(text)
+    # 5. space misspell
+    text = spacing_misspell(text)
+    # 6. clean_latex
+    text = clean_latex(text)
+    # 7. space
     text = spacing_punctuation(text)
-    # 5. handle number
+    # 8. handle number
     if remove_num:
         text = remove_number(text)
     else:
         text = spacing_digit(text)
-    # 6. remove space
+    # 9. remove space
     text = remove_space(text)
     return text
 
