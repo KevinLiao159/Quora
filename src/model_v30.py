@@ -269,9 +269,9 @@ def spacing_misspell(text):
         '(F|f)ck',
         '(D|d)ick',
         'Trump',
-        ' (A|a)nti',
+        '\W(A|a)nti',
         '(W|w)hy',
-        'Jew',
+        # 'Jew',
         'bait',
         'care',
         'troll',
@@ -279,14 +279,13 @@ def spacing_misspell(text):
         'gender',
         'people',
         'kind',
-        'sick',
+        '(S|s)ick',
         '(S|s)uck',
         '(I|i)diot',
-        'holes ',
-        'hole ',
+        # 'hole(s|)\W',
         '(B|b)ooty',
-        '(C|c)oin(s|)',
-        '(N|n)igger'
+        '(C|c)oin(s|)\W',
+        '\W(N|n)igger'
     ]
     for word in misspell_list:
         text = re.sub(r"({})".format(word), r" \1 ", text)

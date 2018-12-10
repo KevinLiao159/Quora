@@ -4,7 +4,7 @@ layers:
     1. embedding layer (glove)
     2. SpatialDropout1D (0.1)
     3. bidirectional lstm & gru
-    4. [global_max_pooling1d, attention]
+    4. [global_max_pooling1d, attention, features]
     5. dense 64 & 32
     6. output (sigmoid)
 """
