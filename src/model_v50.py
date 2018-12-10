@@ -124,3 +124,9 @@ def features_transformer(df_text):
     # concat
     joined_features = np.hstack[meta_features, topic_features]
     return minmax_scale(joined_features)
+
+
+def transform(df_text):
+    X1 = token_transformer(df_text)
+    X2 = features_transformer(df_text)
+    return [X1, X2]

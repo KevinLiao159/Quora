@@ -79,7 +79,10 @@ def get_network(embed_filepath):
     # 4. concat global_max_pooling1d and attention
     max_pool = GlobalMaxPool1D(name='global_max_pooling1d')(x)
     atten = Attention(step_dim=MAX_LEN, name='attention')(x)
+
+    # TODO: do we want to add last hidden states from RNNs ????????????
     x = Concatenate(axis=-1)([max_pool, atten])
+
     # 5. dense
     x = Dense(units=DENSE_UNITS_1, activation='relu', name='dense_1')(x)
     x = Dropout(rate=0.1)(x)
