@@ -1,7 +1,7 @@
 """
-NN model with paragram embeddings
+NN model with fasttext embeddings
 layers:
-    1. embedding layer (paragram)
+    1. embedding layer (fasttext)
     2. SpatialDropout1D (0.1)
     3. bidirectional lstm & gru
     4. global_max_pooling1d
@@ -26,13 +26,13 @@ MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
 MODEL_FILEPATH = os.path.join(
     os.environ['DATA_PATH'],
     'models',
-    'model_v31.hdf5'
+    'model_v32.hdf5'
 )
 EMBED_FILEPATH = os.path.join(
     os.environ['DATA_PATH'],
     'embeddings',
-    'paragram_300_sl999',
-    'paragram.pkl'
+    'wiki-news-300d-1M',
+    'fasttext.pkl'
 )
 
 
@@ -57,16 +57,15 @@ def preprocess(text):
     preprocess text into clean text for tokenization
 
     NOTE:
-        1. paragram does NOT support uppper case words
-            (all lower case)
-        2. paragram supports digit
-        3. paragram supports punctuation
-        4. paragram supports domains e.g. www.apple.com
-        5. paragram supports madeup word e.g. whathefuck
+        1. fasttext supports uppper case words
+        2. fasttext supports digit
+        3. fasttext supports punctuation
+        4. fasttext supports domains e.g. www.apple.com
+        5. fasttext supports madeup word e.g. fuckall
             (unclear it supports misspelled words)
     """
     from model_v30 import preprocess as preprocess_base
-    text = preprocess_base(text).lower()
+    text = preprocess_base(text)
     return text
 
 
@@ -77,7 +76,7 @@ def tokenize(df_text):
     tokenizer = Tokenizer(
         num_words=MAX_FEATURES,
         filters='',
-        lower=True,
+        lower=False,
         split=' ')
     # fit to data
     tokenizer.fit_on_texts(list(df_text))

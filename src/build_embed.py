@@ -31,11 +31,12 @@ def load_word_embedding(filepath):
         word_embedding = dict(_get_vec(*w.split(' ')) for w in open(
             filepath, encoding="utf8", errors='ignore'))
     # sanity check word vector length
+    words_to_del = []
     for word, vec in word_embedding.items():
         if len(vec) != 300:
-            print('size error! delete token {} from embedding'.format(word))
-            del word_embedding[word]
-
+            words_to_del.append(word)
+    for word in words_to_del:
+        del word_embedding[word]
     return word_embedding
 
 

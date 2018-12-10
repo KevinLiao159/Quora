@@ -104,6 +104,18 @@ model_6: ensemble and PL
 
 
 
+## Propose model
+first layer: glove embed, paragram embed, fasttext embed, meta features and quora features word count
+second layer: concat(or average)[glove, paragram], skips other
+third layer: spatial dropout for embedding features
+fourth layer: RNN
+fifth layer: attention, capsule
+sixth layer: concat[glove&paragram, fastext, meta and quora]
+seventh layer: dropout
+eighth layer: dense
+
+
+
 ## Kernals
 https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings
 

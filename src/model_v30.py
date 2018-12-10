@@ -229,7 +229,24 @@ def clean_misspell(text):
         'feminazism': 'feminism nazi',
         'Quroa': 'Quora',
         'QUORA': 'Quora',
-        'langague': 'language'
+        'langague': 'language',
+        '(H|h)ongkongese': 'HongKong people',
+        '(K|k)ashmirians': 'Kashmirian',
+        '(C|c)hodu': 'fucker',
+        'penish': 'penis',
+        'micropenis': 'small penis',
+        'Madridiots': 'Madrid idiot',
+        'Ambedkarites': 'Dalit Buddhist movement',
+        'ReleaseTheMemo': 'cry for the right and Trump supporters',
+        'harrase': 'harass',
+        '(B|b)arracoon': 'Black slave',
+        '(C|c)astrater': 'castration',
+        '(R|r)apistan': 'rapist Pakistan',
+        '(T|t)urkified': 'Turkification',
+        'Dumbassistan': 'dumb ass Pakistan',
+        'facetards': 'Facebook retards',
+        'rapefugees': 'rapist refugee',
+        'superficious': 'superficial'
     }
     for mis, sub in misspell_to_sub.items():
         text = re.sub(mis, sub, text)
@@ -249,17 +266,27 @@ def spacing_misspell(text):
         '(S|s)hit',
         '(F|f)uck',
         '(F|f)uk',
+        '(F|f)ck',
+        '(D|d)ick',
         'Trump',
-        '(A|a)nti',
+        ' (A|a)nti',
         '(W|w)hy',
-        '(A|a)nd',
+        'Jew',
         'bait',
         'care',
         'troll',
         'over',
         'gender',
         'people',
-        'kind'
+        'kind',
+        'sick',
+        '(S|s)uck',
+        '(I|i)diot',
+        'holes ',
+        'hole ',
+        '(B|b)ooty',
+        '(C|c)oin(s|)',
+        '(N|n)igger'
     ]
     for word in misspell_list:
         text = re.sub(r"({})".format(word), r" \1 ", text)

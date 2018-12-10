@@ -234,11 +234,63 @@ def word_analyzer(text, remove_punct=False, remove_num=True,
 
 
 """
-Extra - other count-based features
+Extra - regex count-based features
+
+    1. meta features
+    2. topic features
+        E.g. equality, politics, geopolitics, sexuallity,
+            racism, sexism, ethnicity, movement, policy,
+            corruption, religion
 """
 
 
-def count_regexp_occ(regex, text):
+def meta_features_transformer(df_text, col='question_text'):
+    """
+    transform dataframe with a text column to dataframe with
+    following count based features
+        1. number of words in the text
+        2. number of unique words in the text
+        3. number of characters in the text
+        4. number of stopwords
+        5. number of punctuations
+        6. number of upper case words
+        7. number of title case words
+        8. average length of the words
+    """
+    # make sure it is a dataframe
+    df_text = pd.DataFrame(df_text)
+    # number of words in the text
+    df_text["num_words"] = \
+        df_text[col].apply(lambda x: len(str(x).split()))
+    # number of unique words in the text
+    df_text["num_unique_words"] = \
+        df_text[col].apply(lambda x: len(set(str(x).split())))
+    # number of characters in the text
+    df_text["num_chars"] = \
+        df_text[col].apply(lambda x: len(str(x)))
+    # number of stopwords in the text
+    try:
+        stopwords = nltk.corpus.stopwords.words('english')
+    except LookupError:
+        nltk.download('stopwords')
+        stopwords = nltk.corpus.stopwords.words('english')
+    df_text["num_stopwords"] = df_text[col].apply(lambda x: len(
+            [w for w in str(x).lower().split() if w in stopwords]))
+    # number of punctuations in the text
+    df_text["num_punctuations"] = df_text[col].apply(lambda x: len(
+        [c for c in str(x) if c in string.punctuation]))
+    # number of title case words in the text
+    df_text["num_words_upper"] = df_text[col].apply(lambda x: len(
+        [w for w in str(x).split() if w.isupper()]))
+    # number of title case words in the text
+    df_text["num_words_title"] = df_text[col].apply(lambda x: len(
+        [w for w in str(x).split() if w.istitle()]))
+    # Average length of the words in the text
+    df_text["mean_word_len"] = df_text[col].apply(lambda x: np.mean(
+        [len(w) for w in str(x).split()]))
+
+
+def regex_cnt(regex, text):
     """
     simple way to get the number of occurence of a regex
 
@@ -255,7 +307,7 @@ def count_regexp_occ(regex, text):
     return len(re.findall(regex, text))
 
 
-def count_feature_transformer(df_text, col='question_text'):
+def topic_features_transformer(df_text, col='question_text'):
     """
     extract count of regex from text
 
@@ -267,42 +319,148 @@ def count_feature_transformer(df_text, col='question_text'):
     ------
     dataframe with count features
     """
+    key_word_regex = {
+        # toxic
+        'number_fuck': r"[Ff]\S{,3}[Kk]",
+        'number_shit': r"[Ss][Hh]\S*[Tt]",
+        'number_sick': r"[Ss][Ii]*[Cc]*[Kk]",
+        'number_suck': r"[Ss][Uu]*[Cc]*[Kk]",
+        'number_dick': r"[Dd]ick",
+        'number_penis': r"[Pp]enis",
+        'number_kill': r"[Kk]ill",
+        'number_dead': r"[Dd]ea(d|th)",
+        'number_ugly': r"ugly",
+        'number_dumb': r"[Dd]umb",
+        'number_idiot': r"[Ii]diot",
+        'number_retards': r"[Rr]etard(s|)",
+        'number_stupid': r"[S|s]tupid",
+        'number_ass': r"\W[Aa][Ss]{2,}",
+        'number_holes': r"[^[Ww][Hh]ole(s|)\W",
+        'number_rape': r"\Wrap[ie][^d]",
+        'number_anti': r"\W[Aa]nti",
+        'number_hate': r"hate",
+        'number_you': r"\W[Yy][Oo][Uu]\W",
+        # racist
+        'number_R': r"\W[Rr]acis[tm]",
+        'number_color': r"[Cc]olor",
+        'number_Muslim': r"[Mm]uslim",
+        'number_terrorist': r"terror",
+        'number_Islam': r"[Ii]s[Ll]am",
+        'number_white': r"[Ww]hite",
+        'number_India': r"[Ii]ndia",
+        'number_Black': r"[Bb]lack",
+        'number_Jew': r"[Jj]ew",
+        'number_Hindu': r"[Hh]ind[ui]",
+        'number_Asian': r"[Aa]sia",
+        'number_phobi': r"phobi[ac]",
+        'number_slaves': r"slave",
+        # geo nation
+        'number_Earth': r"Earth",
+        'number_nation': r"[Nn]ation",
+        'number_country': r"countr(y|ies)",
+        'number_America': r"[Aa]merica",
+        'number_United': r"United",
+        'number_States': r"States",
+        'number_USA': r"USA",
+        'number_China': r"Chin(a|ese)",
+        'number_Israel': r"[Ii]srael",
+        'number_Pakistan': r"[Pp]akistan",
+        'number_British': r"[Bb]rit(ish|ain)",
+        'number_UK': r"UK",
+        'number_Korea': r"[Kk]orea",
+        'number_Russia': r"[Rr]ussia",
+        'number_African': r"[Aa]frica",
+        'number_Europe': r"[Ee]urope",
+        'number_Japanese': r"[Jj]apan",
+        'number_Palestinian': r"Palestinian",
+        'number_Germany': r"German",
+        'number_Arab': r"Arab",
+        'number_Canada': r"Canada",
+        'number_North': r"North",
+        'number_South': r"South",
+        'number_East': r"East",
+        'number_West': r"West",
+        'number_Middle': r"Middle",
+        'number_Turks': r"Turks",
+        'number_Kashmir': r"Kashmir",
+        'number_Syria': r"Syria",
+        'number_Australia': r"Australia",
+        # politics
+        'number_politic': r"politic",
+        'number_President': r"[Pp]resident",
+        'number_war': r"\W[Ww]ar(s|)\W",
+        'number_Trump': r"[Tt]rump",
+        'number_Donald': r"[Dd]onald",
+        'number_Obama': r"[Oo]bama",
+        'number_care': r"care\W",
+        'number_Hillary': r"[Hh]illary",
+        'number_Clinton': r"[Cc]linton",
+        'number_Putin': r"Putin",
+        'number_liberal': r"[Ll]iberal",
+        'number_conservatives': r"conservative",
+        'number_Democrats': r"Democrat",
+        'number_Republicans': r"Republic",
+        'number_Modi': r"Modi",
+        'number_support': r"support",
+        'number_media': r"media",
+        'number_rights': r"right",
+        'number_control': r"control",
+        'number_claim': r"claim",
+        'number_fake': r"fake",
+        'number_poor': r"poor",
+        'number_law': r"law",
+        'number_legal': r"legal",
+        'number_gun': r"\Wgun(s|)\W",
+        'number_shooting': r"shoot",
+        'number_immigrant': r"immigra",
+        'number_citizens': r"citizen",
+        'number_murder': r"murder",
+        'number_deny': r"deny",
+        'number_propaganda': r"propaganda",
+        'number_refugee': r"refugee",
+        'number_nuclear': r"nuclear",
+        # sex
+        'number_sex': r"[Ss]ex",
+        'number_gender': r"gender",
+        'number_love': r"love",
+        'number_women': r"wom[ae]n",
+        'number_men': r"m[ae]n",
+        'number_girl': r"girl",
+        'number_boy': r"boy",
+        'number_female': r"\W[Ff]em[ai]",
+        'number_male': r"\W[Mm]ale",
+        'number_guy': r"guy",
+        'number_gay': r"gay",
+        'number_lesbian': r"lesbian",
+        'number_trans': r"\W[Tt]rans",
+        'number_son': r"\W[Ss]on\W",
+        'number_sister': r"sister",
+        'number_daughter': r"daughter",
+        'number_marry': r"marr[yi]",
+        'number_wife': r"wife",
+        'number_mon': r"[Mm]on",
+        'number_kid': r"\Wkid",
+        'number_castrated': r"castrat",
+        # religion
+        'number_religion': r"religion",
+        'number_God': r"God",
+        'number_Jesus': r"Jesus",
+        'number_Christianity': r"Christian",
+        'number_atheists': r"athei",
+        'number_Hitler': r"Hitler",
+        'number_ISIS': r"ISIS",
+        'number_Nazi': r"Nazi",
+        # other
+        'number_Quora': r"[Qq]uora",
+        'number_genocide': r"genocide",
+        'number_equal': r"\={2}.+\={2}",
+        'number_quote': r"\"{4}\S+\"{4}"
+    }
     # make sure it is a dataframe
     df_text = pd.DataFrame(df_text)
-    # Count number of \n
-    df_text["ant_slash_n"] = df_text[col].apply(lambda x: count_regexp_occ(r"\n", x))   # noqa
-    # Get length in words and characters
-    df_text["raw_word_len"] = df_text[col].apply(lambda x: len(x.split()))
-    df_text["raw_char_len"] = df_text[col].apply(lambda x: len(x))
-    # Check number of upper case, if you're angry you may write in upper case
-    df_text["nb_upper"] = df_text[col].apply(lambda x: count_regexp_occ(r"[A-Z]", x))   # noqa
-    # Number of F words - f..k contains folk, fork,
-    df_text["nb_fk"] = df_text[col].apply(lambda x: count_regexp_occ(r"[Ff]\S{2}[Kk]", x))  # noqa
-    # Number of S word
-    df_text["nb_sk"] = df_text[col].apply(lambda x: count_regexp_occ(r"[Ss]\S{2}[Kk]", x))  # noqa
-    # Number of D words
-    df_text["nb_dk"] = df_text[col].apply(lambda x: count_regexp_occ(r"[dD]ick", x))    # noqa
-    # Number of occurence of You, insulting someone usually needs someone called : you  # noqa
-    df_text["nb_you"] = df_text[col].apply(lambda x: count_regexp_occ(r"\W[Yy]ou\W", x))    # noqa
-    # Just to check you really refered to my mother ;-)
-    df_text["nb_mother"] = df_text[col].apply(lambda x: count_regexp_occ(r"\Wmother\W", x)) # noqa
-    # Just checking for toxic 19th century vocabulary
-    df_text["nb_ng"] = df_text[col].apply(lambda x: count_regexp_occ(r"\Wnigger\W", x)) # noqa
-    # Some Sentences start with a <:> so it may help
-    df_text["start_with_columns"] = df_text[col].apply(lambda x: count_regexp_occ(r"^\:+", x))  # noqa
-    # Check for time stamp
-    df_text["has_timestamp"] = df_text[col].apply(lambda x: count_regexp_occ(r"\d{2}|:\d{2}", x))   # noqa
-    # Check for dates 18:44, 8 December 2010
-    df_text["has_date_long"] = df_text[col].apply(lambda x: count_regexp_occ(r"\D\d{2}:\d{2}, \d{1,2} \w+ \d{4}", x))   # noqa
-    # Check for date short 8 December 2010
-    df_text["has_date_short"] = df_text[col].apply(lambda x: count_regexp_occ(r"\D\d{1,2} \w+ \d{4}", x))   # noqa
-    # Check for http links
-    df_text["has_http"] = df_text[col].apply(lambda x: count_regexp_occ(r"http[s]{0,1}://\S+", x))  # noqa
-    # check for mail
-    df_text["has_mail"] = df_text[col].apply(lambda x: count_regexp_occ(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', x))  # noqa
-    # Looking for words surrounded by == word == or """" word """"
-    df_text["has_emphasize_equal"] = df_text[col].apply(lambda x: count_regexp_occ(r"\={2}.+\={2}", x))   # noqa
-    df_text["has_emphasize_quotes"] = df_text[col].apply(lambda x: count_regexp_occ(r"\"{4}\S+\"{4}", x)) # noqa
+    # get features
+    for col_name, regex in key_word_regex.items:
+        df_text[col_name] = df_text[col].apply(lambda t: regex_cnt(regex, t))
     return df_text[[c for c in df_text.columns if c != col]]
 
 
