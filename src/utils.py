@@ -28,8 +28,14 @@ def load_and_preprocess(datapath, module):
         axis=0).reset_index(drop=True)
     # transform
     X_features = module.transform(df_all['question_text'])
-    X_train = X_features[:train_test_cut]
-    X_test = X_features[train_test_cut:]
+    # handle multiple inputs
+    if isinstance(X_features, list):
+        X_train = [X[:train_test_cut] for X in X_features]
+        X_test = [X[train_test_cut:] for X in X_features]
+    # single input
+    else:
+        X_train = X_features[:train_test_cut]
+        X_test = X_features[train_test_cut:]
     return df_train, df_test, X_train, X_test
 
 

@@ -288,6 +288,7 @@ def meta_features_transformer(df_text, col='question_text'):
     # Average length of the words in the text
     df_text["mean_word_len"] = df_text[col].apply(lambda x: np.mean(
         [len(w) for w in str(x).split()]))
+    return df_text[[c for c in df_text.columns if c != col]]
 
 
 def regex_cnt(regex, text):

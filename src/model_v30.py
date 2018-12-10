@@ -2,7 +2,7 @@
 NN model with glove embeddings
 layers:
     1. embedding layer (glove)
-    2. SpatialDropout1D (0.1)
+    2. SpatialDropout1D (0.2)
     3. bidirectional lstm & gru
     4. global_max_pooling1d
     5. dense 32 & 16
@@ -75,7 +75,7 @@ def get_network(embed_filepath):
     del embed_weights, input_dim, output_dim
     gc.collect()
     # 2. dropout
-    x = SpatialDropout1D(rate=0.1)(x)
+    x = SpatialDropout1D(rate=0.2)(x)
     # 3. bidirectional lstm & gru
     x = Bidirectional(
         layer=LSTM(RNN_UNITS, return_sequences=True),

@@ -2,7 +2,7 @@
 NN model with fasttext embeddings
 layers:
     1. embedding layer (fasttext)
-    2. SpatialDropout1D (0.1)
+    2. SpatialDropout1D (0.2)
     3. bidirectional lstm & gru
     4. global_max_pooling1d
     5. dense 32 & 16
