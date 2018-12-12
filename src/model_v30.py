@@ -75,7 +75,7 @@ def get_network(embed_filepath):
     del embed_weights, input_dim, output_dim
     gc.collect()
     # 2. dropout
-    x = SpatialDropout1D(rate=0.2)(x)
+    x = SpatialDropout1D(rate=0.15)(x)
     # 3. bidirectional lstm & gru
     x = Bidirectional(
         layer=LSTM(RNN_UNITS, return_sequences=True),

@@ -29,15 +29,15 @@ tqdm.pandas()
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
 MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
 RNN_UNITS = 40
-DENSE_UNITS_1 = 64
-DENSE_UNITS_2 = 32
+DENSE_UNITS_1 = 128
+DENSE_UNITS_2 = 16
 
 
 # file configs
 MODEL_FILEPATH = os.path.join(
     os.environ['DATA_PATH'],
     'models',
-    'model_v40.hdf5'
+    'model_v50.hdf5'
 )
 EMBED_FILEPATH = os.path.join(
     os.environ['DATA_PATH'],

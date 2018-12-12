@@ -8,7 +8,8 @@ from keras import backend as K
 from keras import initializers, regularizers, constraints
 from keras.layers import Activation
 from keras.engine.topology import Layer
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras.callbacks import (EarlyStopping, ModelCheckpoint,
+                             ReduceLROnPlateau)
 
 
 # decision threshold
@@ -20,7 +21,7 @@ class NeuralNetworkClassifier:
     Neural Network classifier for my own interface - sklearn like
     """
     def __init__(self, model, batch_size=256, epochs=10, val_score='val_loss',
-                 balancing_class_weight=True, filepath=None):
+                 reduce_lr=False, balancing_class_weight=True, filepath=None):
         """
         Parameter
         ---------
@@ -33,6 +34,9 @@ class NeuralNetworkClassifier:
         val_score: str, score to monitor. ['accuracy', 'precision_score',
             'recall_score', 'f1_score', 'roc_auc_score']
 
+        reduce_lr: bool, if True, add a Keras callback function that
+            reduce learning rate when a metric has stopped improving
+
         balancing_class_weight: bool, if True, uses the values of y to
             automatically adjust weights inversely proportional to
             class frequencies in the input data as
@@ -44,6 +48,7 @@ class NeuralNetworkClassifier:
         self.batch_size = batch_size
         self.epochs = epochs
         self.val_score = val_score
+        self.reduce_lr = reduce_lr
         self.balancing_class_weight = balancing_class_weight
         self.filepath = filepath
         # compile model
@@ -79,6 +84,16 @@ class NeuralNetworkClassifier:
                     monitor=self.val_score,
                     save_best_only=True,
                     save_weights_only=True
+                )
+            )
+        if self.reduce_lr:
+            callbacks.append(
+                ReduceLROnPlateau(
+                    monitor=self.val_score,
+                    factor=0.6,
+                    patience=1,
+                    min_lr=0.0001,
+                    verbose=2
                 )
             )
         return callbacks

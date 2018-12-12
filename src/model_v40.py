@@ -29,8 +29,8 @@ tqdm.pandas()
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
 MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
 RNN_UNITS = 40
-DENSE_UNITS_1 = 64
-DENSE_UNITS_2 = 32
+DENSE_UNITS_1 = 128
+DENSE_UNITS_2 = 16
 
 
 # file configs
@@ -72,6 +72,7 @@ def get_network(embed_filepath):
         layer=LSTM(RNN_UNITS, return_sequences=True),
         name='bidirectional_lstm'
     )(x)
+    # (optional), get hidden states
     x = Bidirectional(
         layer=GRU(RNN_UNITS, return_sequences=True),
         name='bidirectional_gru'
@@ -79,8 +80,6 @@ def get_network(embed_filepath):
     # 4. concat global_max_pooling1d and attention
     max_pool = GlobalMaxPool1D(name='global_max_pooling1d')(x)
     atten = Attention(step_dim=MAX_LEN, name='attention')(x)
-
-    # TODO: do we want to add last hidden states from RNNs ????????????
     x = Concatenate(axis=-1)([max_pool, atten])
 
     # 5. dense
