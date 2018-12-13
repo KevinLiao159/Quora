@@ -117,12 +117,18 @@ eighth layer: dense
 
 
 ## Kernals
-https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings
+https://www.kaggle.com/fizzbuzz/beginner-s-guide-to-capsule-networks
 
-https://www.kaggle.com/sudalairajkumar/a-look-at-different-embeddings
+https://www.kaggle.com/gmhost/gru-capsule
 
 https://www.kaggle.com/shujian/single-rnn-with-5-folds-snapshot-ensemble
 
 https://www.kaggle.com/thebrownviking20/analyzing-quora-for-the-insinceres
 
 https://www.kaggle.com/mjbahmani/a-data-science-framework-for-quora
+
+
+
+https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings
+
+https://www.kaggle.com/sudalairajkumar/a-look-at-different-embeddings
