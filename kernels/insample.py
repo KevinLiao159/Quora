@@ -406,21 +406,16 @@ def tokenize(df_text, max_features):
     # preprocess
     df_text = df_text.progress_apply(preprocess)
     # tokenizer
-    tokenizer_glove = Tokenizer(
+    tokenizer = Tokenizer(
         num_words=max_features,
         filters='',
         lower=False,
         split=' ')
-    tokenizer_paragram = Tokenizer(
-        num_words=max_features,
-        filters='',
-        lower=True,
-        split=' ')
     # fit to data
-    tokenizer_glove.fit_on_texts(list(df_text))
+    tokenizer.fit_on_texts(list(df_text))
     # tokenize the texts into sequences
-    sequences = tokenizer_glove.texts_to_sequences(df_text)
-    return sequences, tokenizer_glove, tokenizer_paragram
+    sequences = tokenizer.texts_to_sequences(df_text)
+    return sequences, tokenizer
 
 
 """
@@ -454,7 +449,8 @@ def load_word_embedding(filepath):
     return word_embedding
 
 
-def create_embedding_weights(word_index, word_embedding, max_features):
+def create_embedding_weights(word_index, word_embedding,
+                             max_features, paragram=False):
     """
     create weights for embedding layer where row is the word index
     and collumns are the embedding dense vector
@@ -470,6 +466,8 @@ def create_embedding_weights(word_index, word_embedding, max_features):
         embedding filepath
 
     max_features: int, number of words that we want to keep
+
+    paragram: HACK flag
 
     Return
     ------
@@ -488,7 +486,10 @@ def create_embedding_weights(word_index, word_embedding, max_features):
     for word, idx in word_index.items():
         if idx >= a:
             continue
-        word_vec = word_embedding.get(word, None)
+        if paragram:
+            word_vec = word_embedding.get(word.lower(), None)
+        else:
+            word_vec = word_embedding.get(word, None)
         if word_vec is not None:
             embedding_weights[idx] = word_vec
     return embedding_weights
@@ -694,22 +695,18 @@ if __name__ == '__main__':
 
     # tokenize text
     print('tokenizing text ......')
-    sequences, tokenizer_glove, tokenizer_paragram = \
-        tokenize(df_text, max_features=MAX_FEATURES)
+    sequences, tokenizer = tokenize(df_text, max_features=MAX_FEATURES)
     print('pad sequences ......')
     X = pad_sequences(sequences, maxlen=MAX_LEN, padding='pre', truncating='post')  # noqa
     X_train = X[:train_test_cut]
-    # load glove word embeddings
-    print('[1] loading glove embedding file and create weights')
+    # load word embeddings
+    print('[1] loading embedding file and create weights')
     glove_word_embed = load_word_embedding(GLOVE_PATH)
-    # create embedding weights matrix
-    glove_weights = create_embedding_weights(tokenizer_glove.word_index, glove_word_embed, MAX_FEATURES)  # noqa
-    print('done creating glove embedding weights')
-    # load paragram word embeddings
-    print('[2] loading paragram embedding file and create weights')
     paragram_word_embed = load_word_embedding(PARAGRAM_PATH)
     # create embedding weights matrix
-    paragram_weights = create_embedding_weights(tokenizer_paragram.word_index, paragram_word_embed, MAX_FEATURES)  # noqa
+    print('[2] create embedding weights')
+    glove_weights = create_embedding_weights(tokenizer.word_index, glove_word_embed, MAX_FEATURES, False)  # noqa
+    paragram_weights = create_embedding_weights(tokenizer.word_index, paragram_word_embed, MAX_FEATURES, True)  # noqa
     print('done creating paragram embedding weights')
     # average weights
     embed_weights = np.mean((glove_weights, paragram_weights), axis=0)

@@ -391,10 +391,10 @@ def preprocess(text, remove_num=False):
         5. glove supports domains e.g. www.apple.com
         6. glove supports misspelled words e.g. FUCKKK
     """
-    # 1. normalize
-    text = normalize_unicode(text)
-    # 2. remove new line
-    text = remove_newline(text)
+    # # 1. normalize
+    # text = normalize_unicode(text)
+    # # 2. remove new line
+    # text = remove_newline(text)
     # 3. de-contract
     text = decontracted(text)
     # 4. clean misspell

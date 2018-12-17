@@ -20,8 +20,8 @@ class NeuralNetworkClassifier:
     """
     Neural Network classifier for my own interface - sklearn like
     """
-    def __init__(self, model, batch_size=256, epochs=10, val_score='val_loss',
-                 reduce_lr=False, balancing_class_weight=True, filepath=None):
+    def __init__(self, model, batch_size=512, epochs=10, val_score='val_loss',
+                 reduce_lr=True, balancing_class_weight=False, filepath=None):
         """
         Parameter
         ---------
@@ -134,7 +134,7 @@ class NeuralNetworkClassifier:
             class_weight=class_weight)
         return self
 
-    def fit(self, X, y, best_iteration=5, verbose=1):
+    def fit(self, X, y, best_iteration=6, verbose=1):
         """
         fit lightgbm with best iteration, which is the best model
 
@@ -252,25 +252,25 @@ customized Keras layers for deep neural networks
 
 
 class Attention(Layer):
+    """
+    Keras Layer that implements an Attention mechanism for temporal data.
+    Supports Masking.
+    Follows the work of Raffel et al. [https://arxiv.org/abs/1512.08756]
+    # Input shape
+        3D tensor with shape: (samples, steps, features).
+    # Output shape
+        2D tensor with shape: (samples, features).
+    :param kwargs:
+    Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
+    The dimensions are inferred based on the output shape of the RNN.
+    Example:
+        model.add(LSTM(64, return_sequences=True))
+        model.add(Attention())
+    """
     def __init__(self, step_dim,
                  W_regularizer=None, b_regularizer=None,
                  W_constraint=None, b_constraint=None,
                  bias=True, **kwargs):
-        """
-        Keras Layer that implements an Attention mechanism for temporal data.
-        Supports Masking.
-        Follows the work of Raffel et al. [https://arxiv.org/abs/1512.08756]
-        # Input shape
-            3D tensor with shape: (samples, steps, features).
-        # Output shape
-            2D tensor with shape: (samples, features).
-        :param kwargs:
-        Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
-        The dimensions are inferred based on the output shape of the RNN.
-        Example:
-            model.add(LSTM(64, return_sequences=True))
-            model.add(Attention())
-        """
         self.supports_masking = True
         self.init = initializers.get('glorot_uniform')
 
@@ -343,38 +343,37 @@ def squash(x, axis=-1):
 
 
 class Capsule(Layer):
-    def __init__(self, num_capsule, dim_capsule,
-                 routings=3, kernel_size=(9, 1),
-                 share_weights=True, activation='default',
-                 **kwargs):
-        """
-        Keras Layer that implements a Capsule for temporal data.
-        Literature publication: https://arxiv.org/abs/1710.09829v1
-        Youtube video introduction: https://www.youtube.com/watch?v=pPN8d0E3900
-        # Input shape
-            4D tensor with shape: (samples, steps, features).
-        # Output shape
-            3D tensor with shape: (samples, num_capsule, dim_capsule).
-        :param kwargs:
-        Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
-        The dimensions are inferred based on the output shape of the RNN.
-        Example:
-            model.add(
-                LSTM(
-                    64,
-                    return_sequences=True, 
-                    recurrent_initializer=orthogonal(gain=1.0, seed=10000)
-                )
+    """
+    Keras Layer that implements a Capsule for temporal data.
+    Literature publication: https://arxiv.org/abs/1710.09829v1
+    Youtube video introduction: https://www.youtube.com/watch?v=pPN8d0E3900
+    # Input shape
+        4D tensor with shape: (samples, steps, features).
+    # Output shape
+        3D tensor with shape: (samples, num_capsule, dim_capsule).
+    :param kwargs:
+    Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
+    The dimensions are inferred based on the output shape of the RNN.
+    Example:
+        model.add(
+            LSTM(
+                64,
+                return_sequences=True, 
+                recurrent_initializer=orthogonal(gain=1.0, seed=10000)
             )
-            model.add(
-                Capsule(
-                    num_capsule=10,
-                    dim_capsule=10,
-                    routings=4,
-                    share_weights=True
-                )
+        )
+        model.add(
+            Capsule(
+                num_capsule=10,
+                dim_capsule=10,
+                routings=4,
+                share_weights=True
             )
-        """
+        )
+    """
+    def __init__(self, num_capsule, dim_capsule, routings=3,
+                 kernel_size=(9, 1), share_weights=True,
+                 activation='default', **kwargs):
         super(Capsule, self).__init__(**kwargs)
         self.num_capsule = num_capsule
         self.dim_capsule = dim_capsule
@@ -390,22 +389,20 @@ class Capsule(Layer):
         super(Capsule, self).build(input_shape)
         input_dim_capsule = input_shape[-1]
         if self.share_weights:
-            self.W = self.add_weight(
-                name='capsule_kernel',
-                shape=(1, input_dim_capsule,
-                       self.num_capsule * self.dim_capsule),
-                # shape=self.kernel_size,
-                initializer='glorot_uniform',
-                trainable=True)
+            self.W = self.add_weight(name='capsule_kernel',
+                                     shape=(1, input_dim_capsule,
+                                            self.num_capsule * self.dim_capsule),   # noqa
+                                     # shape=self.kernel_size,
+                                     initializer='glorot_uniform',
+                                     trainable=True)
         else:
             input_num_capsule = input_shape[-2]
-            self.W = self.add_weight(
-                name='capsule_kernel',
-                shape=(input_num_capsule,
-                       input_dim_capsule,
-                       self.num_capsule * self.dim_capsule),
-                initializer='glorot_uniform',
-                trainable=True)
+            self.W = self.add_weight(name='capsule_kernel',
+                                     shape=(input_num_capsule,
+                                            input_dim_capsule,
+                                            self.num_capsule * self.dim_capsule),   # noqa
+                                     initializer='glorot_uniform',
+                                     trainable=True)
 
     def call(self, u_vecs):
         if self.share_weights:
@@ -415,24 +412,20 @@ class Capsule(Layer):
 
         batch_size = K.shape(u_vecs)[0]
         input_num_capsule = K.shape(u_vecs)[1]
-
-        u_hat_vecs = K.reshape(
-            u_hat_vecs,
-            (batch_size, input_num_capsule, self.num_capsule, self.dim_capsule))    # noqa
-        # final u_hat_vecs.shape = [None, num_capsule, input_num_capsule, dim_capsule]  # noqa
+        u_hat_vecs = K.reshape(u_hat_vecs, (batch_size, input_num_capsule,
+                                            self.num_capsule, self.dim_capsule))    # noqa
         u_hat_vecs = K.permute_dimensions(u_hat_vecs, (0, 2, 1, 3))
+        # final u_hat_vecs.shape = [None, num_capsule, input_num_capsule, dim_capsule]  # noqa
 
-        # shape = [None, num_capsule, input_num_capsule]
-        b = K.zeros_like(u_hat_vecs[:, :, :, 0])
+        b = K.zeros_like(u_hat_vecs[:, :, :, 0])  # shape = [None, num_capsule, input_num_capsule]  # noqa
         for i in range(self.routings):
-            # shape = [None, input_num_capsule, num_capsule]
-            b = K.permute_dimensions(b, (0, 2, 1))
+            b = K.permute_dimensions(b, (0, 2, 1))  # shape = [None, input_num_capsule, num_capsule]    # noqa
             c = K.softmax(b)
             c = K.permute_dimensions(c, (0, 2, 1))
             b = K.permute_dimensions(b, (0, 2, 1))
-            outputs = self.activation(K.batch_dot(c, u_hat_vecs, [2, 2]))
+            outputs = self.activation(tf.keras.backend.batch_dot(c, u_hat_vecs, [2, 2]))    # noqa
             if i < self.routings - 1:
-                b = K.batch_dot(outputs, u_hat_vecs, [2, 3])
+                b = tf.keras.backend.batch_dot(outputs, u_hat_vecs, [2, 3])
         return outputs
 
     def compute_output_shape(self, input_shape):
