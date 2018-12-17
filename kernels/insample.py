@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn import utils
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
 from keras.preprocessing.text import Tokenizer
@@ -610,7 +610,7 @@ def get_model(embed_weights):
     del embed_weights, input_dim, output_dim
     gc.collect()
     # 2. dropout
-    x = SpatialDropout1D(rate=0.2)(x)
+    x = SpatialDropout1D(rate=0.15)(x)
     # 3. bidirectional lstm & gru
     x = Bidirectional(
         layer=CuDNNLSTM(RNN_UNITS, return_sequences=True),
@@ -628,7 +628,7 @@ def get_model(embed_weights):
 
     # 5. dense
     x = Dense(units=DENSE_UNITS_1, activation='relu', name='dense_1')(x)
-    x = Dropout(rate=0.15)(x)
+    x = Dropout(rate=0.1)(x)
     x = Dense(units=DENSE_UNITS_2, activation='relu', name='dense_2')(x)
     # 6. output (sigmoid)
     output_layer = Dense(units=1, activation='sigmoid', name='output')(x)
@@ -677,8 +677,7 @@ if __name__ == '__main__':
     DATA_PATH = '../input/'
     EMBED_PATH = '../input/embeddings/glove.840B.300d/glove.840B.300d.txt'
     MODEL_PATH = "weights_best.hdf5"
-    FILE_PATH = 'submission.csv'
-    NFOLDS = 5
+    HOLDOUT = 0.1
     SEED = 18
     # mdoel config
     BALANCED = False
@@ -705,7 +704,6 @@ if __name__ == '__main__':
     print('pad sequences ......')
     X = pad_sequences(sequences, maxlen=MAX_LEN, padding='pre', truncating='post')  # noqa
     X_train = X[:train_test_cut]
-    X_test = X[train_test_cut:]
     # load word embeddings
     print('loading embedding file')
     word_embed = load_word_embedding(EMBED_PATH)
@@ -714,43 +712,29 @@ if __name__ == '__main__':
     embed_weights = create_embedding_weights(tokenizer.word_index, word_embed, MAX_FEATURES)  # noqa
     print('done creating embedding weights')
     # train models
-    kfold = StratifiedKFold(n_splits=NFOLDS, random_state=SEED, shuffle=True)
-    best_thres = []
-    y_submit = np.zeros((X_test.shape[0], ))
-    for i, (idx_train, idx_val) in enumerate(kfold.split(X_train, y_train)):
-        # data
-        X_t = X_train[idx_train]
-        y_t = y_train[idx_train]
-        X_v = X_train[idx_val]
-        y_v = y_train[idx_val]
-        # get model
-        model = get_model(embed_weights)
-        # print model
-        if i == 0:
-            print(model.summary())
-        # get class weight
-        weights = None
-        if BALANCED:
-            weights = utils.class_weight.compute_class_weight('balanced', np.unique(y_t), y_t)    # noqa
-        # train
-        model.fit(
-            X_t, y_t,
-            batch_size=BATCH_SIZE, epochs=EPOCHS,
-            validation_data=(X_v, y_v),
-            verbose=2, callbacks=get_callbacks(),
-            class_weight=weights)
-        # reload best model
-        model.load_weights(MODEL_PATH)
-        # get f1 threshold
-        y_proba = model.predict([X_v], batch_size=1024, verbose=2)
-        f1, threshold = f1_smart(np.squeeze(y_v), np.squeeze(y_proba))
-        print('optimal F1: {:.4f} at threshold: {:.4f}'.format(f1, threshold))
-        best_thres.append(threshold)
-        # make prediction for submission
-        y_submit += np.squeeze(model.predict([X_test], batch_size=1024, verbose=2)) / NFOLDS # noqa
-
-# save file
-y_submit = y_submit.reshape((-1, 1))
-df_test['prediction'] = (y_submit > np.mean(best_thres)).astype(int)
-df_test[['qid', 'prediction']].to_csv("submission.csv", index=False)
-print('ALL DONE!!!!')
+    X_t, X_v, y_t, y_v = train_test_split(
+        X_train, y_train,
+        test_size=HOLDOUT,
+        random_state=SEED,
+        shuffle=True,
+        stratify=y_train)
+    # get model
+    model = get_model(embed_weights)
+    print(model.summary())
+    # get class weight
+    weights = None
+    if BALANCED:
+        weights = utils.class_weight.compute_class_weight('balanced', np.unique(y_t), y_t)    # noqa
+    # train
+    model.fit(
+        X_t, y_t,
+        batch_size=BATCH_SIZE, epochs=EPOCHS,
+        validation_split=0.1,
+        verbose=2, callbacks=get_callbacks(),
+        class_weight=weights)
+    # reload best model
+    model.load_weights(MODEL_PATH)
+    # get f1 threshold
+    y_proba = model.predict([X_v], batch_size=1024, verbose=2)
+    f1, threshold = f1_smart(np.squeeze(y_v), np.squeeze(y_proba))
+    print('optimal F1: {:.4f} at threshold: {:.4f}'.format(f1, threshold))

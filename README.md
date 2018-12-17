@@ -119,13 +119,18 @@ eighth layer: dense
 ## Kernals
 https://www.kaggle.com/fizzbuzz/beginner-s-guide-to-capsule-networks
 
+https://www.kaggle.com/ashishpatel26/nlp-text-analytics-solution-quora
+
 https://www.kaggle.com/gmhost/gru-capsule
+
+https://www.kaggle.com/larryfreeman/toxic-comments-code-for-alexander-s-9872-model
 
 https://www.kaggle.com/shujian/single-rnn-with-5-folds-snapshot-ensemble
 
 https://www.kaggle.com/thebrownviking20/analyzing-quora-for-the-insinceres
 
 https://www.kaggle.com/mjbahmani/a-data-science-framework-for-quora
+
 
 
 
