@@ -24,14 +24,16 @@ from sklearn import utils
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 
+import tensorflow as tf
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
-from keras import initializers, regularizers, constraints
+# from keras import initializers, regularizers, constraints
+from keras.layers import Activation, Wrapper
 from keras.engine.topology import Layer
 from keras.layers import (Input, Embedding, SpatialDropout1D, Bidirectional,
-                          CuDNNLSTM, CuDNNGRU, GlobalMaxPool1D, Concatenate,
-                          Dropout, Dense)
+                          CuDNNLSTM, Flatten, Dense)
+from keras.initializers import glorot_normal, orthogonal
 from keras.models import Model
 from keras.callbacks import (EarlyStopping, ModelCheckpoint,
                              ReduceLROnPlateau)
@@ -194,11 +196,59 @@ def clean_misspell(text):
         'Dumbassistan': 'dumb ass Pakistan',
         'facetards': 'Facebook retards',
         'rapefugees': 'rapist refugee',
-        'superficious': 'superficial'
+        'superficious': 'superficial',
+        # extra from kagglers
+        'colour': 'color',
+        'centre': 'center',
+        'favourite': 'favorite',
+        'travelling': 'traveling',
+        'counselling': 'counseling',
+        'theatre': 'theater',
+        'cancelled': 'canceled',
+        'labour': 'labor',
+        'organisation': 'organization',
+        'wwii': 'world war 2',
+        'citicise': 'criticize',
+        'youtu ': 'youtube ',
+        'Qoura': 'Quora',
+        'sallary': 'salary',
+        'Whta': 'What',
+        'narcisist': 'narcissist',
+        'narcissit': 'narcissist',
+        'howdo': 'how do',
+        'whatare': 'what are',
+        'howcan': 'how can',
+        'howmuch': 'how much',
+        'howmany': 'how many',
+        'whydo': 'why do',
+        'doI': 'do I',
+        'theBest': 'the best',
+        'howdoes': 'how does',
+        'mastrubation': 'masturbation',
+        'mastrubate': 'masturbate',
+        'mastrubating': 'masturbating',
+        'pennis': 'penis',
+        'Etherium': 'Ethereum',
+        'bigdata': 'big data',
+        '2k17': '2017',
+        '2k18': '2018',
+        'qouta': 'quota',
+        'exboyfriend': 'ex boyfriend',
+        'airhostess': 'air hostess',
+        'whst': 'what',
+        'watsapp': 'whatsapp',
+        'demonitisation': 'demonetization',
+        'demonitization': 'demonetization',
+        'demonetisation': 'demonetization'
     }
-    for mis, sub in misspell_to_sub.items():
-        text = re.sub(mis, sub, text)
-    return text
+    misspell_re = re.compile('(%s)' % '|'.join(misspell_to_sub.keys()))
+
+    def _replace(match):
+        """
+        reference: https://www.kaggle.com/hengzheng/attention-capsule-why-not-both-lb-0-694 # noqa
+        """
+        return misspell_to_sub.get(match.group(0), match.group(0))
+    return misspell_re.sub(_replace, text)
 
 
 def spacing_misspell(text):
@@ -235,18 +285,20 @@ def spacing_misspell(text):
         '(C|c)oin(s|)\W',
         '\W(N|n)igger'
     ]
-    for word in misspell_list:
-        text = re.sub(r"({})".format(word), r" \1 ", text)
-    return text
+    misspell_re = re.compile('(%s)' % '|'.join(misspell_list))
+    return misspell_re.sub(r" \1 ", text)
 
 
 def clean_latex(text):
     """
     convert r"[math]\vec{x} + \vec{y}" to English
     """
+    # edge case
+    text = re.sub(r'\[math\]', ' LaTex math ', text)
+    text = re.sub(r'\[\/math\]', ' LaTex math ', text)
+    text = re.sub(r'\\', ' LaTex ', text)
+
     pattern_to_sub = {
-        r'\[math\]': ' LaTex math ',
-        r'\[\/math\]': ' LaTex math ',
         r'\\mathrm': ' LaTex math mode ',
         r'\\mathbb': ' LaTex math mode ',
         r'\\boxed': ' LaTex equation ',
@@ -274,11 +326,19 @@ def clean_latex(text):
         r'\\infty': ' infinity ',
         r'\\int': ' integer ',
         r'\\in': ' in ',
-        r'\\': ' LaTex ',
     }
-    for pat, sub in pattern_to_sub.items():
-        text = re.sub(pat, sub, text)
-    return text
+    # post process for look up
+    pattern_dict = {k.strip('\\'): v for k, v in pattern_to_sub.items()}
+    # init re
+    patterns = pattern_to_sub.keys()
+    pattern_re = re.compile('(%s)' % '|'.join(patterns))
+
+    def _replace(match):
+        """
+        reference: https://www.kaggle.com/hengzheng/attention-capsule-why-not-both-lb-0-694 # noqa
+        """
+        return pattern_dict.get(match.group(0).strip('\\'), match.group(0))
+    return pattern_re.sub(_replace, text)
 
 
 def normalize_unicode(text):
@@ -513,89 +573,139 @@ customized Keras layers for deep neural networks
 """
 
 
-class Attention(Layer):
-    def __init__(self, step_dim,
-                 W_regularizer=None, b_regularizer=None,
-                 W_constraint=None, b_constraint=None,
-                 bias=True, **kwargs):
-        """
-        Keras Layer that implements an Attention mechanism for temporal data.
-        Supports Masking.
-        Follows the work of Raffel et al. [https://arxiv.org/abs/1512.08756]
-        # Input shape
-            3D tensor with shape: (samples, steps, features).
-        # Output shape
-            2D tensor with shape: (samples, features).
-        :param kwargs:
-        Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
-        The dimensions are inferred based on the output shape of the RNN.
-        Example:
-            model.add(LSTM(64, return_sequences=True))
-            model.add(Attention())
-        """
-        self.supports_masking = True
-        self.init = initializers.get('glorot_uniform')
+def squash(x, axis=-1):
+    s_squared_norm = K.sum(K.square(x), axis, keepdims=True)
+    scale = K.sqrt(s_squared_norm + K.epsilon())
+    return x / scale
 
-        self.W_regularizer = regularizers.get(W_regularizer)
-        self.b_regularizer = regularizers.get(b_regularizer)
 
-        self.W_constraint = constraints.get(W_constraint)
-        self.b_constraint = constraints.get(b_constraint)
-
-        self.bias = bias
-        self.step_dim = step_dim
-        self.features_dim = 0
-        super(Attention, self).__init__(**kwargs)
+class Capsule(Layer):
+    """
+    Keras Layer that implements a Capsule for temporal data.
+    Literature publication: https://arxiv.org/abs/1710.09829v1
+    Youtube video introduction: https://www.youtube.com/watch?v=pPN8d0E3900
+    # Input shape
+        4D tensor with shape: (samples, steps, features).
+    # Output shape
+        3D tensor with shape: (samples, num_capsule, dim_capsule).
+    :param kwargs:
+    Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
+    The dimensions are inferred based on the output shape of the RNN.
+    Example:
+        model.add(
+            LSTM(
+                64,
+                return_sequences=True, 
+                recurrent_initializer=orthogonal(gain=1.0, seed=10000)
+            )
+        )
+        model.add(
+            Capsule(
+                num_capsule=10,
+                dim_capsule=10,
+                routings=4,
+                share_weights=True
+            )
+        )
+    """
+    def __init__(self, num_capsule, dim_capsule, routings=3,
+                 kernel_size=(9, 1), share_weights=True,
+                 activation='default', **kwargs):
+        super(Capsule, self).__init__(**kwargs)
+        self.num_capsule = num_capsule
+        self.dim_capsule = dim_capsule
+        self.routings = routings
+        self.kernel_size = kernel_size
+        self.share_weights = share_weights
+        if activation == 'default':
+            self.activation = squash
+        else:
+            self.activation = Activation(activation)
 
     def build(self, input_shape):
-        assert len(input_shape) == 3
-
-        self.W = self.add_weight((input_shape[-1],),
-                                 initializer=self.init,
-                                 name='{}_W'.format(self.name),
-                                 regularizer=self.W_regularizer,
-                                 constraint=self.W_constraint)
-        self.features_dim = input_shape[-1]
-
-        if self.bias:
-            self.b = self.add_weight((input_shape[1],),
-                                     initializer='zero',
-                                     name='{}_b'.format(self.name),
-                                     regularizer=self.b_regularizer,
-                                     constraint=self.b_constraint)
+        super(Capsule, self).build(input_shape)
+        input_dim_capsule = input_shape[-1]
+        if self.share_weights:
+            self.W = self.add_weight(name='capsule_kernel',
+                                     shape=(1, input_dim_capsule,
+                                            self.num_capsule * self.dim_capsule),   # noqa
+                                     # shape=self.kernel_size,
+                                     initializer='glorot_uniform',
+                                     trainable=True)
         else:
-            self.b = None
+            input_num_capsule = input_shape[-2]
+            self.W = self.add_weight(name='capsule_kernel',
+                                     shape=(input_num_capsule,
+                                            input_dim_capsule,
+                                            self.num_capsule * self.dim_capsule),   # noqa
+                                     initializer='glorot_uniform',
+                                     trainable=True)
 
-        self.built = True
+    def call(self, u_vecs):
+        if self.share_weights:
+            u_hat_vecs = K.conv1d(u_vecs, self.W)
+        else:
+            u_hat_vecs = K.local_conv1d(u_vecs, self.W, [1], [1])
 
-    def compute_mask(self, input, input_mask=None):
-        return None
+        batch_size = K.shape(u_vecs)[0]
+        input_num_capsule = K.shape(u_vecs)[1]
+        u_hat_vecs = K.reshape(u_hat_vecs, (batch_size, input_num_capsule,
+                                            self.num_capsule, self.dim_capsule))    # noqa
+        u_hat_vecs = K.permute_dimensions(u_hat_vecs, (0, 2, 1, 3))
+        # final u_hat_vecs.shape = [None, num_capsule, input_num_capsule, dim_capsule]  # noqa
 
-    def call(self, x, mask=None):
-        features_dim = self.features_dim
-        step_dim = self.step_dim
-
-        eij = K.reshape(K.dot(K.reshape(x, (-1, features_dim)),
-                        K.reshape(self.W, (features_dim, 1))), (-1, step_dim))
-
-        if self.bias:
-            eij += self.b
-
-        eij = K.tanh(eij)
-
-        a = K.exp(eij)
-
-        if mask is not None:
-            a *= K.cast(mask, K.floatx())
-
-        a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
-
-        a = K.expand_dims(a)
-        weighted_input = x * a
-        return K.sum(weighted_input, axis=1)
+        b = K.zeros_like(u_hat_vecs[:, :, :, 0])  # shape = [None, num_capsule, input_num_capsule]  # noqa
+        for i in range(self.routings):
+            b = K.permute_dimensions(b, (0, 2, 1))  # shape = [None, input_num_capsule, num_capsule]    # noqa
+            c = K.softmax(b)
+            c = K.permute_dimensions(c, (0, 2, 1))
+            b = K.permute_dimensions(b, (0, 2, 1))
+            outputs = self.activation(tf.keras.backend.batch_dot(c, u_hat_vecs, [2, 2]))    # noqa
+            if i < self.routings - 1:
+                b = tf.keras.backend.batch_dot(outputs, u_hat_vecs, [2, 3])
+        return outputs
 
     def compute_output_shape(self, input_shape):
-        return input_shape[0],  self.features_dim
+        return (None, self.num_capsule, self.dim_capsule)
+
+
+class DropConnect(Wrapper):
+    """
+    Keras Wrapper that implements a DropConnect Layer.
+    When training with Dropout, a randomly selected subset of activations are
+    set to zero within each layer. DropConnect instead sets a randomly
+    selected subset of weights within the network to zero.
+    Each unit thus receives input from a random subset of units in the
+    previous layer.
+
+    Reference: https://cs.nyu.edu/~wanli/dropc/
+    Implementation: https://github.com/andry9454/KerasDropconnect
+    """
+    def __init__(self, layer, prob, **kwargs):
+        self.prob = prob
+        self.layer = layer
+        super(DropConnect, self).__init__(layer, **kwargs)
+        if 0. < self.prob < 1.:
+            self.uses_learning_phase = True
+
+    def build(self, input_shape):
+        if not self.layer.built:
+            self.layer.build(input_shape)
+            self.layer.built = True
+        super(DropConnect, self).build()
+
+    def compute_output_shape(self, input_shape):
+        return self.layer.compute_output_shape(input_shape)
+
+    def call(self, x):
+        if 0. < self.prob < 1.:
+            self.layer.kernel = K.in_train_phase(
+                K.dropout(self.layer.kernel, self.prob),
+                self.layer.kernel)
+            self.layer.bias = K.in_train_phase(
+                K.dropout(self.layer.bias, self.prob),
+                self.layer.bias)
+        return self.layer.call(x)
 
 
 def get_model(embed_weights):
@@ -616,26 +726,22 @@ def get_model(embed_weights):
     del embed_weights, input_dim, output_dim
     gc.collect()
     # 2. dropout
-    x = SpatialDropout1D(rate=0.2)(x)
-    # 3. bidirectional lstm & gru
+    x = SpatialDropout1D(rate=SPATIAL_DROPOUT)(x)
+    # 3. bidirectional lstm
     x = Bidirectional(
-        layer=CuDNNLSTM(RNN_UNITS, return_sequences=True),
-        name='bidirectional_lstm'
-    )(x)
-    # (optional), get hidden states
-    x = Bidirectional(
-        layer=CuDNNGRU(RNN_UNITS, return_sequences=True),
-        name='bidirectional_gru'
-    )(x)
-    # 4. concat global_max_pooling1d and attention
-    max_pool = GlobalMaxPool1D(name='global_max_pooling1d')(x)
-    atten = Attention(step_dim=MAX_LEN, name='attention')(x)
-    x = Concatenate(axis=-1)([max_pool, atten])
-
-    # 5. dense
-    x = Dense(units=DENSE_UNITS_1, activation='relu', name='dense_1')(x)
-    x = Dropout(rate=0.15)(x)
-    x = Dense(units=DENSE_UNITS_2, activation='relu', name='dense_2')(x)
+        layer=CuDNNLSTM(RNN_UNITS, return_sequences=True,
+                        kernel_initializer=glorot_normal(seed=1029),
+                        recurrent_initializer=orthogonal(gain=1.0, seed=1029)),
+        name='bidirectional_lstm')(x)
+    # 4. capsule layer
+    x = Capsule(num_capsule=10, dim_capsule=10, routings=4,
+                share_weights=True, name='capsule')(x)
+    x = Flatten(name='flatten')(x)
+    # 5. dense with dropConnect
+    x = DropConnect(
+        Dense(DENSE_UNITS, activation="relu"),
+        prob=0.05,
+        name='dropConnect_dense')(x)
     # 6. output (sigmoid)
     output_layer = Dense(units=1, activation='sigmoid', name='output')(x)
     model = Model(inputs=input_layer, outputs=output_layer)
@@ -670,7 +776,7 @@ metric
 
 def f1_smart(y_true, y_proba):
     scores = {}
-    for thres in np.linspace(0.1, 0.5, 401):
+    for thres in np.arange(0.1, 0.51, 0.01):
         thres = round(thres, 3)
         scores[thres] = f1_score(y_true, (y_proba > thres).astype(int))
     # get max
@@ -686,16 +792,16 @@ if __name__ == '__main__':
     MODEL_PATH = "weights_best.hdf5"
     FILE_PATH = 'submission.csv'
     NFOLDS = 5
-    SEED = 18
+    SEED = 99
     # mdoel config
     BALANCED = False
     BATCH_SIZE = 512
     EPOCHS = 6
     MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
     MAX_LEN = 75    # mean_len = 12; Q99_len = 40; max_len = 189;
-    RNN_UNITS = 40
-    DENSE_UNITS_1 = 128
-    DENSE_UNITS_2 = 16
+    SPATIAL_DROPOUT = 0.24
+    RNN_UNITS = 80
+    DENSE_UNITS = 32
 
     # load data
     df_train, df_test = load_data(DATA_PATH)

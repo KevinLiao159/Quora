@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 from keras import backend as K
 from keras import initializers, regularizers, constraints
-from keras.layers import Activation
+from keras.layers import Activation, Wrapper
 from keras.engine.topology import Layer
 from keras.callbacks import (EarlyStopping, ModelCheckpoint,
                              ReduceLROnPlateau)
@@ -430,3 +430,42 @@ class Capsule(Layer):
 
     def compute_output_shape(self, input_shape):
         return (None, self.num_capsule, self.dim_capsule)
+
+
+class DropConnect(Wrapper):
+    """
+    Keras Wrapper that implements a DropConnect Layer.
+    When training with Dropout, a randomly selected subset of activations are
+    set to zero within each layer. DropConnect instead sets a randomly
+    selected subset of weights within the network to zero.
+    Each unit thus receives input from a random subset of units in the
+    previous layer.
+
+    Reference: https://cs.nyu.edu/~wanli/dropc/
+    Implementation: https://github.com/andry9454/KerasDropconnect
+    """
+    def __init__(self, layer, prob, **kwargs):
+        self.prob = prob
+        self.layer = layer
+        super(DropConnect, self).__init__(layer, **kwargs)
+        if 0. < self.prob < 1.:
+            self.uses_learning_phase = True
+
+    def build(self, input_shape):
+        if not self.layer.built:
+            self.layer.build(input_shape)
+            self.layer.built = True
+        super(DropConnect, self).build()
+
+    def compute_output_shape(self, input_shape):
+        return self.layer.compute_output_shape(input_shape)
+
+    def call(self, x):
+        if 0. < self.prob < 1.:
+            self.layer.kernel = K.in_train_phase(
+                K.dropout(self.layer.kernel, self.prob),
+                self.layer.kernel)
+            self.layer.bias = K.in_train_phase(
+                K.dropout(self.layer.bias, self.prob),
+                self.layer.bias)
+        return self.layer.call(x)

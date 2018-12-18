@@ -1,8 +1,8 @@
 """
 logging:
 Time    # Log
-582(s)  1 tokenizing text
-173(s)  2 load embedding file
+439(s)  1 tokenizing text
+172(s)  2 load embedding file
 7(s)    3 create word embedding weights
 9(s)    4 model instantiation
 211(s)  5 model training per epoch (8 epoches)
@@ -194,11 +194,59 @@ def clean_misspell(text):
         'Dumbassistan': 'dumb ass Pakistan',
         'facetards': 'Facebook retards',
         'rapefugees': 'rapist refugee',
-        'superficious': 'superficial'
+        'superficious': 'superficial',
+        # extra from kagglers
+        'colour': 'color',
+        'centre': 'center',
+        'favourite': 'favorite',
+        'travelling': 'traveling',
+        'counselling': 'counseling',
+        'theatre': 'theater',
+        'cancelled': 'canceled',
+        'labour': 'labor',
+        'organisation': 'organization',
+        'wwii': 'world war 2',
+        'citicise': 'criticize',
+        'youtu ': 'youtube ',
+        'Qoura': 'Quora',
+        'sallary': 'salary',
+        'Whta': 'What',
+        'narcisist': 'narcissist',
+        'narcissit': 'narcissist',
+        'howdo': 'how do',
+        'whatare': 'what are',
+        'howcan': 'how can',
+        'howmuch': 'how much',
+        'howmany': 'how many',
+        'whydo': 'why do',
+        'doI': 'do I',
+        'theBest': 'the best',
+        'howdoes': 'how does',
+        'mastrubation': 'masturbation',
+        'mastrubate': 'masturbate',
+        'mastrubating': 'masturbating',
+        'pennis': 'penis',
+        'Etherium': 'Ethereum',
+        'bigdata': 'big data',
+        '2k17': '2017',
+        '2k18': '2018',
+        'qouta': 'quota',
+        'exboyfriend': 'ex boyfriend',
+        'airhostess': 'air hostess',
+        'whst': 'what',
+        'watsapp': 'whatsapp',
+        'demonitisation': 'demonetization',
+        'demonitization': 'demonetization',
+        'demonetisation': 'demonetization'
     }
-    for mis, sub in misspell_to_sub.items():
-        text = re.sub(mis, sub, text)
-    return text
+    misspell_re = re.compile('(%s)' % '|'.join(misspell_to_sub.keys()))
+
+    def _replace(match):
+        """
+        reference: https://www.kaggle.com/hengzheng/attention-capsule-why-not-both-lb-0-694 # noqa
+        """
+        return misspell_to_sub.get(match.group(0), match.group(0))
+    return misspell_re.sub(_replace, text)
 
 
 def spacing_misspell(text):
@@ -235,18 +283,20 @@ def spacing_misspell(text):
         '(C|c)oin(s|)\W',
         '\W(N|n)igger'
     ]
-    for word in misspell_list:
-        text = re.sub(r"({})".format(word), r" \1 ", text)
-    return text
+    misspell_re = re.compile('(%s)' % '|'.join(misspell_list))
+    return misspell_re.sub(r" \1 ", text)
 
 
 def clean_latex(text):
     """
     convert r"[math]\vec{x} + \vec{y}" to English
     """
+    # edge case
+    text = re.sub(r'\[math\]', ' LaTex math ', text)
+    text = re.sub(r'\[\/math\]', ' LaTex math ', text)
+    text = re.sub(r'\\', ' LaTex ', text)
+
     pattern_to_sub = {
-        r'\[math\]': ' LaTex math ',
-        r'\[\/math\]': ' LaTex math ',
         r'\\mathrm': ' LaTex math mode ',
         r'\\mathbb': ' LaTex math mode ',
         r'\\boxed': ' LaTex equation ',
@@ -274,11 +324,19 @@ def clean_latex(text):
         r'\\infty': ' infinity ',
         r'\\int': ' integer ',
         r'\\in': ' in ',
-        r'\\': ' LaTex ',
     }
-    for pat, sub in pattern_to_sub.items():
-        text = re.sub(pat, sub, text)
-    return text
+    # post process for look up
+    pattern_dict = {k.strip('\\'): v for k, v in pattern_to_sub.items()}
+    # init re
+    patterns = pattern_to_sub.keys()
+    pattern_re = re.compile('(%s)' % '|'.join(patterns))
+
+    def _replace(match):
+        """
+        reference: https://www.kaggle.com/hengzheng/attention-capsule-why-not-both-lb-0-694 # noqa
+        """
+        return pattern_dict.get(match.group(0).strip('\\'), match.group(0))
+    return pattern_re.sub(_replace, text)
 
 
 def normalize_unicode(text):
@@ -610,7 +668,7 @@ def get_model(embed_weights):
     del embed_weights, input_dim, output_dim
     gc.collect()
     # 2. dropout
-    x = SpatialDropout1D(rate=0.2)(x)
+    x = SpatialDropout1D(rate=0.15)(x)
     # 3. bidirectional lstm & gru
     x = Bidirectional(
         layer=CuDNNLSTM(RNN_UNITS, return_sequences=True),
@@ -628,7 +686,7 @@ def get_model(embed_weights):
 
     # 5. dense
     x = Dense(units=DENSE_UNITS_1, activation='relu', name='dense_1')(x)
-    x = Dropout(rate=0.15)(x)
+    x = Dropout(rate=0.1)(x)
     x = Dense(units=DENSE_UNITS_2, activation='relu', name='dense_2')(x)
     # 6. output (sigmoid)
     output_layer = Dense(units=1, activation='sigmoid', name='output')(x)
@@ -664,7 +722,7 @@ metric
 
 def f1_smart(y_true, y_proba):
     scores = {}
-    for thres in np.linspace(0.1, 0.5, 401):
+    for thres in np.arange(0.1, 0.51, 0.01):
         thres = round(thres, 3)
         scores[thres] = f1_score(y_true, (y_proba > thres).astype(int))
     # get max
