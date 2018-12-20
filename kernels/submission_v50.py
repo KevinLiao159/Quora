@@ -1,12 +1,14 @@
 """
 logging:
 Time    # Log
-582(s)  1 tokenizing text
-173(s)  2 load embedding file
-7(s)    3 create word embedding weights
-9(s)    4 model instantiation
-211(s)  5 model training per epoch (8 epoches)
-
+432(s)  1 tokenizing text
+160(s)  3 load glove embedding file
+160(s)  3 load paragram embedding file
+12(s)   4 create word embedding weights
+12(s)   4 create word embedding weights
+3(s)    5 average two word embedding weights
+9(s)    6 model instantiation
+197(s)  6 model training per epoch (6 epoches)
 
 """
 
@@ -65,10 +67,13 @@ def clean_misspell(text):
     misspell list (quora vs. glove)
     """
     misspell_to_sub = {
-        '(T|t)erroristan': 'terrorist Pakistan',
+        'Terroristan': 'terrorist Pakistan',
+        'terroristan': 'terrorist Pakistan',
         'BIMARU': 'Bihar, Madhya Pradesh, Rajasthan, Uttar Pradesh',
-        '(H|h)induphobic': 'Hindu phobic',
-        '(H|h)induphobia': 'Hindu phobic',
+        'Hinduphobic': 'Hindu phobic',
+        'hinduphobic': 'Hindu phobic',
+        'Hinduphobia': 'Hindu phobic',
+        'hinduphobia': 'Hindu phobic',
         'Babchenko': 'Arkady Arkadyevich Babchenko faked death',
         'Boshniaks': 'Bosniaks',
         'Dravidanadu': 'Dravida Nadu',
@@ -81,118 +86,141 @@ def clean_misspell(text):
         'unoin': 'Union',
         'daesh': 'Islamic State of Iraq and the Levant',
         'Kalergi': 'Coudenhove-Kalergi',
-        ' apist': ' Ape',
-        '(B|b)hakts': 'Bhakt',
+        'Bhakts': 'Bhakt',
+        'bhakts': 'Bhakt',
         'Tambrahms': 'Tamil Brahmin',
         'Pahul': 'Amrit Sanskar',
-        'SJW(s|)': 'social justice warrior',
-        'incel(s|)': 'involuntary celibates',
+        'SJW': 'social justice warrior',
+        'SJWs': 'social justice warrior',
+        ' incel': ' involuntary celibates',
+        ' incels': ' involuntary celibates',
         'emiratis': 'Emiratis',
         'weatern': 'western',
+        'westernise': 'westernize',
         'Pizzagate': 'Pizzagate conspiracy theory',
         'naïve': 'naive',
         'Skripal': 'Sergei Skripal',
-        '(R|r)emainers': 'remainer',
+        'Remainers': 'British remainer',
+        'remainers': 'British remainer',
+        'bremainer': 'British remainer',
         'antibrahmin': 'anti Brahminism',
         'HYPSM': ' Harvard, Yale, Princeton, Stanford, MIT',
         'HYPS': ' Harvard, Yale, Princeton, Stanford',
         'kompromat': 'compromising material',
-        '(T|t)harki': 'pervert',
+        'Tharki': 'pervert',
+        'tharki': 'pervert',
         'mastuburate': 'masturbate',
         'Zoë': 'Zoe',
         'indans': 'Indian',
-        'xender': 'gender',
-        'Naxali': 'Naxalite',
+        ' xender': ' gender',
+        'Naxali ': 'Naxalite ',
+        'Naxalities': 'Naxalites',
         'Bathla': 'Namit Bathla',
         'Mewani': 'Indian politician Jignesh Mevani',
-        'clichéd': 'cliché',
-        'cliché(s|)': 'cliché',
+        'clichéd': 'cliche',
+        'cliché': 'cliche',
+        'clichés': 'cliche',
         'Wjy': 'Why',
         'Fadnavis': 'Indian politician Devendra Fadnavis',
         'Awadesh': 'Indian engineer Awdhesh Singh',
         'Awdhesh': 'Indian engineer Awdhesh Singh',
         'Khalistanis': 'Sikh separatist movement',
         'madheshi': 'Madheshi',
-        'Quorans': 'Quoran',
         'BNBR': 'Be Nice, Be Respectful',
         'Bolsonaro': 'Jair Bolsonaro',
         'XXXTentacion': 'Tentacion',
         'Padmavat': 'Indian Movie Padmaavat',
         'Žižek': 'Slovenian philosopher Slavoj Žižek',
         'Adityanath': 'Indian monk Yogi Adityanath',
-        '(B|b)rexit': 'British Exit',
+        'Brexit': 'British Exit',
+        'Brexiter': 'British Exit supporter',
+        'Brexiters': 'British Exit supporters',
+        'Brexiteer': 'British Exit supporter',
+        'Brexiteers': 'British Exit supporters',
+        'Brexiting': 'British Exit',
+        'Brexitosis': 'British Exit disorder',
+        'brexit': 'British Exit',
+        'brexiters': 'British Exit supporters',
         'jallikattu': 'Jallikattu',
-        'fortnite': 'Fortnite',
-        'Swachh': 'Swachh Bharat mission campaign',
-        'Qoura': 'Quora',
+        'fortnite': 'Fortnite ',
+        'Swachh': 'Swachh Bharat mission campaign ',
+        'Quorans': 'Quoran',
+        'Qoura ': 'Quora ',
+        'quoras': 'Quora',
+        'Quroa': 'Quora',
+        'QUORA': 'Quora',
         'narcissit': 'narcissist',
         # extra in sample
         'Doklam': 'Tibet',
-        'Drumpf': 'Donald Trump',
+        'Drumpf ': 'Donald Trump fool ',
+        'Drumpfs': 'Donald Trump fools',
         'Strzok': 'Hillary Clinton scandal',
-        'rohingya': 'Rohingya',
-        'wumao': 'offensive Chinese',
+        'rohingya': 'Rohingya ',
+        'wumao ': 'cheap Chinese stuff',
+        'wumaos': 'cheap Chinese stuff',
         'Sanghis': 'Sanghi',
         'Tamilans': 'Tamils',
         'biharis': 'Biharis',
         'Rejuvalex': 'hair growth formula',
-        'Feku': 'The Man of India',
+        'Feku': 'The Man of India ',
         'deplorables': 'deplorable',
-        'muhajirs': 'Muslim immigrants',
-        'Brexiters': 'British Exit supporters',
-        'Brexiteers': 'British Exit supporters',
-        'Brexiting': 'British Exit',
+        'muhajirs': 'Muslim immigrant',
         'Gujratis': 'Gujarati',
-        'Chutiya': 'Tibet people',
+        'Chutiya': 'Tibet people ',
+        'Chutiyas': 'Tibet people ',
         'thighing': 'masturbate',
         '卐': 'Nazi Germany',
-        'rohingyas': 'Muslim ethnic group',
-        'Pribumi': 'Native Indonesians',
+        'Pribumi': 'Native Indonesian',
         'Gurmehar': 'Gurmehar Kaur Indian student activist',
         'Novichok': 'Soviet Union agents',
         'Khazari': 'Khazars',
         'Demonetization': 'demonetization',
         'demonetisation': 'demonetization',
-        'cryptocurrencies': 'bitcoin',
-        'Hindians': 'offensive Indian',
-        'vaxxers': 'vocal nationalists',
-        'remoaners': 'remainer',
+        'demonitisation': 'demonetization',
+        'demonitization': 'demonetization',
+        'demonetisation': 'demonetization',
+        'cryptocurrencies': 'cryptocurrency',
+        'Hindians': 'North Indian who hate British',
+        'vaxxer': 'vocal nationalist ',
+        'remoaner': 'remainer ',
+        'bremoaner': 'British remainer ',
         'Jewism': 'Judaism',
         'Eroupian': 'European',
-        'WMAF': 'White male Asian female',
+        'WMAF': 'White male married Asian female',
         'moeslim': 'Muslim',
         'cishet': 'cisgender and heterosexual person',
-        'Eurocentrics': 'Eurocentrism',
+        'Eurocentric': 'Eurocentrism ',
         'Jewdar': 'Jew dar',
-        'Asifas': 'abduction, rape, murder case',
+        'Asifa': 'abduction, rape, murder case ',
         'marathis': 'Marathi',
-        'Trumpanzees': 'Trump chimpanzee',
-        'quoras': 'Quora',
-        'Crimeans': 'Crimea people',
+        'Trumpanzees': 'Trump chimpanzee fool',
+        'Crimean': 'Crimea people ',
         'atrracted': 'attract',
         'LGBT': 'lesbian, gay, bisexual, transgender',
-        'Boshniaks': 'Bosniaks',
+        'Boshniak': 'Bosniaks ',
         'Myeshia': 'widow of Green Beret killed in Niger',
         'demcoratic': 'Democratic',
         'raaping': 'rape',
         'Dönmeh': 'Islam',
         'feminazism': 'feminism nazi',
-        'Quroa': 'Quora',
-        'QUORA': 'Quora',
         'langague': 'language',
-        '(H|h)ongkongese': 'HongKong people',
-        '(K|k)ashmirians': 'Kashmirian',
-        '(C|c)hodu': 'fucker',
+        'Hongkongese': 'HongKong people',
+        'hongkongese': 'HongKong people',
+        'Kashmirians': 'Kashmirian',
+        'Chodu': 'fucker',
         'penish': 'penis',
-        'micropenis': 'small penis',
-        'Madridiots': 'Madrid idiot',
-        'Ambedkarites': 'Dalit Buddhist movement',
+        'micropenis': 'tiny penis',
+        'Madridiots': 'Real Madrid idiot supporters',
+        'Ambedkarite': 'Dalit Buddhist movement ',
         'ReleaseTheMemo': 'cry for the right and Trump supporters',
         'harrase': 'harass',
-        '(B|b)arracoon': 'Black slave',
-        '(C|c)astrater': 'castration',
-        '(R|r)apistan': 'rapist Pakistan',
-        '(T|t)urkified': 'Turkification',
+        'Barracoon': 'Black slave',
+        'Castrater': 'castration',
+        'castrater': 'castration',
+        'Rapistan': 'Pakistan rapist',
+        'rapistan': 'Pakistan rapist',
+        'Turkified': 'Turkification',
+        'turkified': 'Turkification',
         'Dumbassistan': 'dumb ass Pakistan',
         'facetards': 'Facebook retards',
         'rapefugees': 'rapist refugee',
@@ -210,7 +238,6 @@ def clean_misspell(text):
         'wwii': 'world war 2',
         'citicise': 'criticize',
         'youtu ': 'youtube ',
-        'Qoura': 'Quora',
         'sallary': 'salary',
         'Whta': 'What',
         'narcisist': 'narcissist',
@@ -237,9 +264,38 @@ def clean_misspell(text):
         'airhostess': 'air hostess',
         'whst': 'what',
         'watsapp': 'whatsapp',
-        'demonitisation': 'demonetization',
-        'demonitization': 'demonetization',
-        'demonetisation': 'demonetization'
+        # extra
+        'bodyshame': 'body shaming',
+        'bodyshoppers': 'body shopping',
+        'bodycams': 'body cams',
+        'Cananybody': 'Can any body',
+        'deadbody': 'dead body',
+        'deaddict': 'de addict',
+        'Northindian': 'North Indian ',
+        'northindian': 'north Indian ',
+        'northkorea': 'North Korea',
+        'Whykorean': 'Why Korean',
+        'koreaboo': 'Korea boo ',
+        'Brexshit': 'British Exit bullshit',
+        'shithole': ' shithole ',
+        'shitpost': 'shit post',
+        'shitslam': 'shit Islam',
+        'shitlords': 'shit lords',
+        'Fck': 'Fuck',
+        'fck': 'fuck',
+        'Clickbait': 'click bait ',
+        'clickbait': 'click bait ',
+        'mailbait': 'mail bait',
+        'healhtcare': 'healthcare',
+        'trollbots': 'troll bots',
+        'trollled': 'trolled',
+        'trollimg': 'trolling',
+        'cybertrolling': 'cyber trolling',
+        'sickular': 'India sick secular ',
+        'suckimg': 'sucking',
+        'Idiotism': 'idiotism',
+        'Niggerism': 'Nigger',
+        'Niggeriah': 'Nigger'
     }
     misspell_re = re.compile('(%s)' % '|'.join(misspell_to_sub.keys()))
 
@@ -247,7 +303,12 @@ def clean_misspell(text):
         """
         reference: https://www.kaggle.com/hengzheng/attention-capsule-why-not-both-lb-0-694 # noqa
         """
-        return misspell_to_sub.get(match.group(0), match.group(0))
+        try:
+            word = misspell_to_sub.get(match.group(0))
+        except KeyError:
+            word = match.group(0)
+            print('!!Error: Could Not Find Key: {}'.format(word))
+        return word
     return misspell_re.sub(_replace, text)
 
 
@@ -256,34 +317,16 @@ def spacing_misspell(text):
     'deadbody' -> 'dead body'
     """
     misspell_list = [
-        'body',
-        '(D|d)ead',
-        '(N|n)orth',
-        '(K|k)orea',
-        'matrix',
-        '(S|s)hit',
         '(F|f)uck',
-        '(F|f)uk',
-        '(F|f)ck',
-        '(D|d)ick',
         'Trump',
         '\W(A|a)nti',
         '(W|w)hy',
-        # 'Jew',
-        'bait',
-        'care',
-        'troll',
-        'over',
+        '(W|w)hat',
+        'How',
+        'care\W',
+        '\Wover',
         'gender',
         'people',
-        'kind',
-        '(S|s)ick',
-        '(S|s)uck',
-        '(I|i)diot',
-        # 'hole(s|)\W',
-        '(B|b)ooty',
-        '(C|c)oin(s|)\W',
-        '\W(N|n)igger'
     ]
     misspell_re = re.compile('(%s)' % '|'.join(misspell_list))
     return misspell_re.sub(r" \1 ", text)
@@ -337,7 +380,12 @@ def clean_latex(text):
         """
         reference: https://www.kaggle.com/hengzheng/attention-capsule-why-not-both-lb-0-694 # noqa
         """
-        return pattern_dict.get(match.group(0).strip('\\'), match.group(0))
+        try:
+            word = pattern_dict.get(match.group(0).strip('\\'))
+        except KeyError:
+            word = match.group(0)
+            print('!!Error: Could Not Find Key: {}'.format(word))
+        return word
     return pattern_re.sub(_replace, text)
 
 
@@ -737,11 +785,11 @@ def get_model(embed_weights):
     x = Capsule(num_capsule=10, dim_capsule=10, routings=4,
                 share_weights=True, name='capsule')(x)
     x = Flatten(name='flatten')(x)
-    # 5. dense with dropConnect
-    x = DropConnect(
-        Dense(DENSE_UNITS, activation="relu"),
-        prob=0.05,
-        name='dropConnect_dense')(x)
+    # # 5. dense with dropConnect
+    # x = DropConnect(
+    #     Dense(DENSE_UNITS, activation="relu"),
+    #     prob=0.05,
+    #     name='dropConnect_dense')(x)
     # 6. output (sigmoid)
     output_layer = Dense(units=1, activation='sigmoid', name='output')(x)
     model = Model(inputs=input_layer, outputs=output_layer)
