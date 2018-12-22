@@ -473,7 +473,7 @@ def topic_features_transformer(df_text, col='question_text'):
     # make sure it is a dataframe
     df_text = pd.DataFrame(df_text)
     # get features
-    for col_name, regex in key_word_regex.items:
+    for col_name, regex in key_word_regex.items():
         df_text[col_name] = df_text[col].apply(lambda t: regex_cnt(regex, t))
     return df_text[[c for c in df_text.columns if c != col]]
 

@@ -27,7 +27,7 @@ tqdm.pandas()
 
 # model configs
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
-MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
+MAX_LEN = 75    # mean_len = 12; Q99_len = 40; max_len = 189;
 RNN_UNITS = 40
 DENSE_UNITS_1 = 128
 DENSE_UNITS_2 = 16

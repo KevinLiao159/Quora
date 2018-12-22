@@ -2,10 +2,10 @@
 NN model with glove embeddings
 layers:
     1. embedding layer (glove)
-    2. SpatialDropout1D (0.1)
+    2. SpatialDropout1D (0.24)
     3. bidirectional lstm & gru
     4. [global_max_pooling1d, attention, features]
-    5. dense 64 & 32
+    5. dense 128 & 16
     6. output (sigmoid)
 """
 import os
@@ -18,7 +18,7 @@ from keras.layers import (Input, Embedding, SpatialDropout1D, Bidirectional,
                           Dense)
 from keras.models import Model
 
-from neural_networks import Attention
+from neural_networks import Attention, DropConnect
 from neural_networks import NeuralNetworkClassifier
 
 from tqdm import tqdm
@@ -27,11 +27,11 @@ tqdm.pandas()
 
 # model configs
 MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
-MAX_LEN = 80    # mean_len = 12; Q99_len = 40; max_len = 189;
+MAX_LEN = 75    # mean_len = 12; Q99_len = 40; max_len = 189;
 RNN_UNITS = 40
+F_DROPOUT = 0.05
 DENSE_UNITS_1 = 128
 DENSE_UNITS_2 = 16
-
 
 # file configs
 MODEL_FILEPATH = os.path.join(
@@ -49,10 +49,10 @@ EMBED_FILEPATH = os.path.join(
 
 def get_network(embed_filepath):
     # features network
-    input_features = Input(shape=(1, ), name='input_features')
-    dense_features = Dense(units=16,
-                           activation='relu',
-                           name='dense_features')(input_features)
+    input_features = Input(shape=(136, ), name='input_features')
+    dense_features = DropConnect(
+        Dense(16, activation="relu"),
+        prob=F_DROPOUT)(input_features)
     # tokens network
     input_tokens = Input(shape=(MAX_LEN, ), name='input_tokens')
     # 1. embedding layer
@@ -72,7 +72,7 @@ def get_network(embed_filepath):
     del embed_weights, input_dim, output_dim
     gc.collect()
     # 2. dropout
-    x = SpatialDropout1D(rate=0.15)(x)
+    x = SpatialDropout1D(rate=0.24)(x)
     # 3. bidirectional lstm & gru
     x = Bidirectional(
         layer=LSTM(RNN_UNITS, return_sequences=True),
@@ -122,7 +122,7 @@ def features_transformer(df_text):
     meta_features = meta_features_transformer(df_text).values
     topic_features = topic_features_transformer(df_text).values
     # concat
-    joined_features = np.hstack[meta_features, topic_features]
+    joined_features = np.hstack([meta_features, topic_features])
     return minmax_scale(joined_features)
 
 

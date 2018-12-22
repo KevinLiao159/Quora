@@ -1,14 +1,12 @@
 """
 logging:
 Time    # Log
-432(s)  1 tokenizing text
-160(s)  3 load glove embedding file
-160(s)  3 load paragram embedding file
-12(s)   4 create word embedding weights
-12(s)   4 create word embedding weights
-3(s)    5 average two word embedding weights
-9(s)    6 model instantiation
-197(s)  6 model training per epoch (6 epoches)
+439(s)  1 tokenizing text
+172(s)  2 load embedding file
+7(s)    3 create word embedding weights
+9(s)    4 model instantiation
+211(s)  5 model training per epoch (8 epoches)
+
 
 """
 
@@ -30,11 +28,11 @@ import tensorflow as tf
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras import backend as K
-# from keras import initializers, regularizers, constraints
+from keras import initializers, regularizers, constraints
 from keras.layers import Activation, Wrapper
 from keras.engine.topology import Layer
 from keras.layers import (Input, Embedding, SpatialDropout1D, Bidirectional,
-                          CuDNNLSTM, Flatten, Dense)
+                          CuDNNLSTM, Flatten, Concatenate, Dense)
 from keras.initializers import glorot_normal, orthogonal
 from keras.models import Model
 from keras.callbacks import (EarlyStopping, ModelCheckpoint,
@@ -621,6 +619,91 @@ customized Keras layers for deep neural networks
 """
 
 
+class Attention(Layer):
+    def __init__(self, step_dim,
+                 W_regularizer=None, b_regularizer=None,
+                 W_constraint=None, b_constraint=None,
+                 bias=True, **kwargs):
+        """
+        Keras Layer that implements an Attention mechanism for temporal data.
+        Supports Masking.
+        Follows the work of Raffel et al. [https://arxiv.org/abs/1512.08756]
+        # Input shape
+            3D tensor with shape: (samples, steps, features).
+        # Output shape
+            2D tensor with shape: (samples, features).
+        :param kwargs:
+        Just put it on top of an RNN Layer (GRU/LSTM/SimpleRNN) with return_sequences=True. # noqa
+        The dimensions are inferred based on the output shape of the RNN.
+        Example:
+            model.add(LSTM(64, return_sequences=True))
+            model.add(Attention())
+        """
+        self.supports_masking = True
+        self.init = initializers.get('glorot_uniform')
+
+        self.W_regularizer = regularizers.get(W_regularizer)
+        self.b_regularizer = regularizers.get(b_regularizer)
+
+        self.W_constraint = constraints.get(W_constraint)
+        self.b_constraint = constraints.get(b_constraint)
+
+        self.bias = bias
+        self.step_dim = step_dim
+        self.features_dim = 0
+        super(Attention, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        assert len(input_shape) == 3
+
+        self.W = self.add_weight((input_shape[-1],),
+                                 initializer=self.init,
+                                 name='{}_W'.format(self.name),
+                                 regularizer=self.W_regularizer,
+                                 constraint=self.W_constraint)
+        self.features_dim = input_shape[-1]
+
+        if self.bias:
+            self.b = self.add_weight((input_shape[1],),
+                                     initializer='zero',
+                                     name='{}_b'.format(self.name),
+                                     regularizer=self.b_regularizer,
+                                     constraint=self.b_constraint)
+        else:
+            self.b = None
+
+        self.built = True
+
+    def compute_mask(self, input, input_mask=None):
+        return None
+
+    def call(self, x, mask=None):
+        features_dim = self.features_dim
+        step_dim = self.step_dim
+
+        eij = K.reshape(K.dot(K.reshape(x, (-1, features_dim)),
+                        K.reshape(self.W, (features_dim, 1))), (-1, step_dim))
+
+        if self.bias:
+            eij += self.b
+
+        eij = K.tanh(eij)
+
+        a = K.exp(eij)
+
+        if mask is not None:
+            a *= K.cast(mask, K.floatx())
+
+        a /= K.cast(K.sum(a, axis=1, keepdims=True) + K.epsilon(), K.floatx())
+
+        a = K.expand_dims(a)
+        weighted_input = x * a
+        return K.sum(weighted_input, axis=1)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0],  self.features_dim
+
+
 def squash(x, axis=-1):
     s_squared_norm = K.sum(K.square(x), axis, keepdims=True)
     scale = K.sqrt(s_squared_norm + K.epsilon())
@@ -782,14 +865,15 @@ def get_model(embed_weights):
                         recurrent_initializer=orthogonal(gain=1.0, seed=1029)),
         name='bidirectional_lstm')(x)
     # 4. capsule layer
-    x = Capsule(num_capsule=10, dim_capsule=10, routings=4,
-                share_weights=True, name='capsule')(x)
-    x = Flatten(name='flatten')(x)
-    # # 5. dense with dropConnect
-    # x = DropConnect(
-    #     Dense(DENSE_UNITS, activation="relu"),
-    #     prob=0.05,
-    #     name='dropConnect_dense')(x)
+    capsul = Capsule(num_capsule=10, dim_capsule=10, routings=4, share_weights=True)(x) # noqa
+    capsul = Flatten()(capsul)
+    capsul = DropConnect(Dense(32, activation="relu"), prob=0.01)(capsul)
+
+    # 5. attention later
+    atten = Attention(step_dim=MAX_LEN, name='attention')(x)
+    atten = DropConnect(Dense(16, activation="relu"), prob=0.05)(atten)
+    x = Concatenate(axis=-1)([capsul, atten])
+
     # 6. output (sigmoid)
     output_layer = Dense(units=1, activation='sigmoid', name='output')(x)
     model = Model(inputs=input_layer, outputs=output_layer)
@@ -842,14 +926,14 @@ if __name__ == '__main__':
     NFOLDS = 5
     SEED = 99
     # mdoel config
-    BALANCED = False
+    BALANCED = True
     BATCH_SIZE = 512
     EPOCHS = 6
     MAX_FEATURES = int(2.5e5)  # total word count = 227,538; clean word count = 186,551   # noqa
     MAX_LEN = 75    # mean_len = 12; Q99_len = 40; max_len = 189;
     SPATIAL_DROPOUT = 0.24
     RNN_UNITS = 80
-    DENSE_UNITS = 32
+    # DENSE_UNITS = 32
 
     # load data
     df_train, df_test = load_data(DATA_PATH)
