@@ -1,7 +1,7 @@
 <h1 align="center"> Kaggle Competition: Quora Insincere Questions Classification </h1> <br>
 <p align="center">
   <a href="https://www.kaggle.com/c/quora-insincere-questions-classification">
-    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="https://www.kaggleusercontent.com/kf/7148105/eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2In0..O0w0YFsZV14TfVAGpoxpZg.MQhSfc4fO2HFicbMCNJ7B1zBp6FlSqjkXbVnipRDPZ3iFu16UJl8kMTRxtO9kdKfh3PayflL1sW11ui0s45Oa05_rJEJInauTc8rggYuwzrjoaKBBJ4qXK8b2NaoIv6zjDHfhDXO7e8pCjvVzXZgcrqS3Q96NuAwYTtSlBDz_DY.lW84EVh5CCnp5b2ZqBZ_JQ/__results___files/__results___12_0.png">
+    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="https://raw.githubusercontent.com/rafapetter/udacity-machine-learning-capstone/master/eda/word_cloud.png">
   </a>
 </p>
 
@@ -42,13 +42,13 @@ Submissions are evaluated on F1 score between the predicted and the observed tar
 
 I have a standard workflow for model development. First starts with simple linear-based model, then add complexities if needed. Eventually, I will deploy neural network models with ensemble technique for final submission. Following is each step during my model development:
 
-1. Establish a strong baseline with the hybrid **"NB-SVM"** model [link to model V0](https://github.com/KevinLiao159/Quora/blob/master/src/model_v0.py)
+1. Establish a strong baseline with the hybrid **"NB-SVM"** model [(link to model V0)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v0.py)
 
-2. Try tree-based model **LightGBM** [link to model V1](https://github.com/KevinLiao159/Quora/blob/master/src/model_v1.py)
+2. Try tree-based model **LightGBM** [(link to model V1)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v1.py)
 
-3. Try a blending model: **"NB-SVM"** + **LightGBM** [link to the blending model V11](https://github.com/KevinLiao159/Quora/blob/master/src/model_v11.py)
+3. Try a blending model: **"NB-SVM"** + **LightGBM** [(link to the blending model V11)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v11.py)
 
-4. Establish baseline for neural network model [link to model V2](https://github.com/KevinLiao159/Quora/blob/master/src/model_v2.py)
+4. Establish baseline for neural network model [(link to model V2)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v2.py)
 - 1st layer: embedding layer without pretrained
 - 2nd layer: spatial dropout
 - 3rd layer: bidirectional with LSTM
@@ -58,16 +58,11 @@ I have a standard workflow for model development. First starts with simple linea
 5. Try neural network model with pretrained embedding weights
 I used a very similar neural network architecture like above. The only changes are 1) adding text cleaning 2). using pretrained word embedding weights
 
-- [neural networks with **glove**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
+- [neural networks with **Glove**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
+- [neural networks with **Paragram**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
+- [neural networks with **FastText**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
 
-
-
-5. Others
-  i. Many comments were toxic only in the last sentences -- adding some models trained with the ending 25-50 characters in addition to the starting 200-300 assisted our stack.
-  
-  ii. Some approaches struggled to deal with the “ordering” problem of words. This meant that CNN approaches were difficult to work with, as they rely on max-pooling as a crutch, whereas RNN is better
-
-  iii. Attention Layer takes much longer to train
+6. 
 
 
 
