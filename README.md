@@ -49,18 +49,19 @@ I have a standard workflow for model development. First starts with simple linea
 3. Try a blending model: **"NB-SVM"** + **LightGBM** [(link to the blending model V11)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v11.py)
 
 4. Establish baseline for neural network model [(link to model V2)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v2.py)
-- 1st layer: embedding layer without pretrained
-- 2nd layer: spatial dropout
-- 3rd layer: bidirectional with LSTM
-- 4th layer: global max pooling 1D
-- 5th layer: output dense layer
+  - 1st layer: embedding layer without pretrained
+  - 2nd layer: spatial dropout
+  - 3rd layer: bidirectional with LSTM
+  - 4th layer: global max pooling 1D
+  - 5th layer: output dense layer
 
 5. Try neural network model with pretrained embedding weights
 I used a very similar neural network architecture like above. The only changes are 1) adding text cleaning 2). using pretrained word embedding weights
 
-- [neural networks with **Glove**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
-- [neural networks with **Paragram**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
-- [neural networks with **FastText**](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
+- Neural Networks with **Glove** [(link to model V30)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
+- Neural Networks with **Paragram** [(link to model V31)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
+- Neural Networks with **FastText** [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
+
 
 6. 
 
