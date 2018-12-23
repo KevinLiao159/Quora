@@ -1,7 +1,7 @@
 <h1 align="center"> Kaggle Competition: Quora Insincere Questions Classification </h1> <br>
 <p align="center">
   <a href="https://www.kaggle.com/c/quora-insincere-questions-classification">
-    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="https://raw.githubusercontent.com/rafapetter/udacity-machine-learning-capstone/master/eda/word_cloud.png">
+    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="https://raw.githubusercontent.com/rafapetter/udacity-machine-learning-capstone/master/eda/word_cloud.png" width="800" height="500">
   </a>
 </p>
 
@@ -64,9 +64,9 @@ I used a very similar neural network architecture like above. The only changes a
   - Neural Networks with **FastText** word embedding [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
 
 
-6. Try to use Attension layer with **Glove** word embedding [(link to model V40)](https://github.com/KevinLiao159/Quora/blob/v5/src/model_v40.py)
+6. Try to use **LSTM Attention** with **Glove** word embedding [(link to model V40)](https://github.com/KevinLiao159/Quora/blob/v5/src/model_v40.py)
 
-7. Use both LSTM Attention and CapsNet [(link to model V5)](https://github.com/KevinLiao159/Quora/blob/v4/kernels/submission_v50.py) 
+7. Use both **LSTM Attention** and **Capsule Neural Network (CapsNet)** [(link to model V5)](https://github.com/KevinLiao159/Quora/blob/v4/kernels/submission_v50.py) 
 
 
 ## Kaggle Public LeaderBoard Ranking
@@ -77,6 +77,7 @@ I used a very similar neural network architecture like above. The only changes a
 | model V30 | 0.683 | 1075th (*top40%*)|
 | model V40 | 0.690 | 700th (*top28%*)|
 | model V50 | 0.697 | 91th (*top4%*)|
+
 
 
 ## Reference
