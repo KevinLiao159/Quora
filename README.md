@@ -1,7 +1,7 @@
 <h1 align="center"> Kaggle Competition: Quora Insincere Questions Classification </h1> <br>
 <p align="center">
   <a href="https://www.kaggle.com/c/quora-insincere-questions-classification">
-    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="http://www.chiranjeevivegi.com/Toxic-Comment-Challenge/img_gh/word_cloud.png">
+    <img alt="Kaggle: Quora Competition" title="Kaggle: Quora Competition" src="https://raw.githubusercontent.com/rafapetter/udacity-machine-learning-capstone/master/eda/word_cloud.png" width="800" height="500">
   </a>
 </p>
 
@@ -10,6 +10,10 @@
 
 ## Table of Contents
 - [Introduction](#introduction)
+- [Model Development](#model-development)
+- [Kaggle Public LeaderBoard Ranking](#kaggle-public-leaderboard-ranking)
+- [Reference](#reference)
+
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -19,104 +23,65 @@
 ![Dependencies](https://img.shields.io/badge/dependencies-up%20to%20date-brightgreen.svg)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+[This competition](https://www.kaggle.com/c/quora-insincere-questions-classification) is sponsored by Quora. The objective is to predict whether a question asked on Quora is sincere or not. This is a kernels only comeptition with contraint of two-hour runtime.
 
-NOTE: add keras logo, tensorflow logo as well
+An insincere question is defined as a question intended to make a statement rather than look for helpful answers. Some characteristics that can signify that a question is insincere:
+* has a non-neutral tone
+* is disparaging or inflammatory
+* isn't grounded in reality
+* uses sexual content
 
-
-## Points of attack (impacts order from big to small)
-1. Embeddeding layer is the key
->90% of a model’s complexity resides in the embedding layer, focus on embeddeding layers rather than post-embedded layers. 
-
-Usually two bi-directional LSTM/GRU + two dense is good enough. Additional dense layers, gaussian vs. spatial dropout, additional dropout layers at the dense level, attention instead of max pooling, time distributed dense layers, and more barely changed the overall score of the model.
-
-For choosing pre-trained weights or non-pretrained, more coverage is better.
-wikinews FastText > Glove > Paragram > Google News
+Submissions are evaluated on F1 score between the predicted and the observed targets
 
 
-NOTE: preprocessing was also not particularly impactful, although leaving punctuation in the embeddings for some models (with fasttext, so they could be accomodated) was helpful in stacking.
-NOTE: preprocessing needs to clean up things like f.u.c.k -> fuck)
+## Model Development
+<p align="center">
+  <a href="http://s8.picofile.com/file/8342707700/workflow2.png">
+    <img alt="Data Science Workflow" title="Data Science Workflow" src="http://s8.picofile.com/file/8342707700/workflow2.png">
+  </a>
+</p>
 
-2. Single best model
-First layer: concatenated fasttext and glove twitter embeddings. Fasttext vector is used by itself if there is no glove vector but not the other way around. Words without word vectors are replaced with a word vector for a word "something". Also, I added additional value that was set to 1 if a word was written in all capital letters and 0 otherwise.
+I have a standard workflow for model development. First starts with simple linear-based model, then add complexities if needed. Eventually, I will deploy neural network models with ensemble technique for final submission. Following is each step during my model development:
 
-Second layer: SpatialDropout1D(0.5)
+1. Establish a strong baseline with the hybrid **"NB-SVM"** model [(link to model V0)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v0.py)
 
-Third layer: Bidirectional CuDNNLSTM with a kernel size 40. I found out that LSTM as a first layer works better than GRU.
+2. Try tree-based model **LightGBM** [(link to model V1)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v1.py)
 
-Fourth layer: Bidirectional CuDNNGRU with a kernel size 40.
+3. Try a blending model: **"NB-SVM"** + **LightGBM** [(link to the blending model V11)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v11.py)
 
-Fifth layer: A concatenation of the last state, maximum pool, average pool and two features: "Unique words rate" and "Rate of all-caps words"
+4. Establish baseline for neural network model [(link to model V2)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v2.py)
 
-Sixth layer: output dense layer.
+  - 1st layer: embedding layer without pretrained
+  - 2nd layer: spatial dropout
+  - 3rd layer: bidirectional with LSTM
+  - 4th layer: global max pooling 1D
+  - 5th layer: output dense layer
 
-Batch size: 512. I found that bigger batch size makes results more stable.
-Epochs: 15
-Sequence length: 900.
-Optimizer: Adam with clipped gradient.
+5. Try neural network model with pretrained embedding weights
+I used a very similar neural network architecture like above. The only changes are 1) adding text cleaning 2). using pretrained word embedding weights
 
-Fixed some misspellings with TextBlob dictionary.
-Fixed misspellings by finding word vector neighborhoods.
-
-3. Rough-bore pseudo-labelling (PL)
-Use the best ensemble model to label the test samples, adding them to the train set (with shuffle?) and continue training to convergence
-
-4. Blending, or CV stacking
-For CV stacking, could use logit or LightGBM (small trees with low depth and strong l1 regularization) to stack. Tracked accuracy, log loss and AUC to decide wether or not to stack
-
-potential models: RNNs (LSTM, GRU), CNNs (DPCNN), (word + char-ngram) + One BiGru + Four CNNs, and GBM, NbSvm, (word + char-ngram) + logistic
-
-5. Others
-  i. Many comments were toxic only in the last sentences -- adding some models trained with the ending 25-50 characters in addition to the starting 200-300 assisted our stack.
-  
-  ii. Some approaches struggled to deal with the “ordering” problem of words. This meant that CNN approaches were difficult to work with, as they rely on max-pooling as a crutch, whereas RNN is better
-
-  iii. Attention Layer takes much longer to train
+  - Neural Networks with **Glove** word embedding [(link to model V30)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
+  - Neural Networks with **Paragram** word embedding [(link to model V31)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
+  - Neural Networks with **FastText** word embedding [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
 
 
+6. Try to use **LSTM Attention** with **Glove** word embedding [(link to model V40)](https://github.com/KevinLiao159/Quora/blob/v5/src/model_v40.py)
 
-## Plan of attack
+7. Use both **LSTM Attention** and **Capsule Neural Network (CapsNet)** [(link to model V5)](https://github.com/KevinLiao159/Quora/blob/v4/kernels/submission_v50.py) 
 
-model_v0: strong baseline with word (char) + NbSvm
 
-model_v1: strong baseline with word (char) + LGBM
+## Kaggle Public LeaderBoard Ranking
 
-model_v2: strong NN baseline with non-pretrained weights, word (char) + above structure w/wo attention
-
-add kernals:
-  1). EDA kernals for word clouds in toxic comments
-  2). Mispelled and missing vectors from pre-trained weights
-
-model_v31: NN with pretrained weight wikinews FastText
-model_v311: NN with pretrained weight wikinews FastText and cleaning and mispell
-
-model_v32: NN with pretrained weight wikinews Glove
-model_v321: NN with pretrained weight wikinews Glove and cleaning and mispell
-
-model_v33: NN with pretrained weight wikinews Paragram
-
-model_v34: NN with pretrained weight wikinews Google News
-
-model_4: concat embeddeding weights (weights from v2, FastTest, Glove) + NN
-
-model_5: ensemble
-
-model_6: ensemble and PL
+| model | public score | public leaderboard | 
+|---|---|---|
+| model V0 | 0.641 | 1600th (*top66%*)|
+| model V30 | 0.683 | 1075th (*top40%*)|
+| model V40 | 0.690 | 700th (*top28%*)|
+| model V5 | 0.697 | 91th (*top4%*)|
 
 
 
-## Propose model
-first layer: glove embed, paragram embed, fasttext embed, meta features and quora features word count
-second layer: concat(or average)[glove, paragram], skips other
-third layer: spatial dropout for embedding features
-fourth layer: RNN
-fifth layer: attention, capsule
-sixth layer: concat[glove&paragram, fastext, meta and quora]
-seventh layer: dropout
-eighth layer: dense
-
-
-
-## Kernals
+## Reference
 https://www.kaggle.com/fizzbuzz/beginner-s-guide-to-capsule-networks
 
 https://www.kaggle.com/ashishpatel26/nlp-text-analytics-solution-quora
@@ -130,9 +95,6 @@ https://www.kaggle.com/shujian/single-rnn-with-5-folds-snapshot-ensemble
 https://www.kaggle.com/thebrownviking20/analyzing-quora-for-the-insinceres
 
 https://www.kaggle.com/mjbahmani/a-data-science-framework-for-quora
-
-
-
 
 https://www.kaggle.com/christofhenkel/how-to-preprocessing-when-using-embeddings
 
