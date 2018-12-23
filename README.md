@@ -49,6 +49,7 @@ I have a standard workflow for model development. First starts with simple linea
 3. Try a blending model: **"NB-SVM"** + **LightGBM** [(link to the blending model V11)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v11.py)
 
 4. Establish baseline for neural network model [(link to model V2)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v2.py)
+
   - 1st layer: embedding layer without pretrained
   - 2nd layer: spatial dropout
   - 3rd layer: bidirectional with LSTM
@@ -58,9 +59,9 @@ I have a standard workflow for model development. First starts with simple linea
 5. Try neural network model with pretrained embedding weights
 I used a very similar neural network architecture like above. The only changes are 1) adding text cleaning 2). using pretrained word embedding weights
 
-- Neural Networks with **Glove** word embedding [(link to model V30)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
-- Neural Networks with **Paragram** word embedding [(link to model V31)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
-- Neural Networks with **FastText** word embedding [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
+  - Neural Networks with **Glove** word embedding [(link to model V30)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
+  - Neural Networks with **Paragram** word embedding [(link to model V31)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
+  - Neural Networks with **FastText** word embedding [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
 
 
 6. Try to use Attension layer with **Glove** word embedding [(link to model V40)](https://github.com/KevinLiao159/Quora/blob/v5/src/model_v40.py)
@@ -69,8 +70,9 @@ I used a very similar neural network architecture like above. The only changes a
 
 
 ## Kaggle Public LeaderBoard Ranking
+
 | model | public score | public leaderboard | 
-|---|---|---|---|
+|---|---|---|
 | model V0 | 0.641 | 1600th (*top66%*)|
 | model V30 | 0.683 | 1075th (*top40%*)|
 | model V40 | 0.690 | 700th (*top28%*)|
