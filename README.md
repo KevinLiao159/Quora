@@ -58,17 +58,26 @@ I have a standard workflow for model development. First starts with simple linea
 5. Try neural network model with pretrained embedding weights
 I used a very similar neural network architecture like above. The only changes are 1) adding text cleaning 2). using pretrained word embedding weights
 
-- Neural Networks with **Glove** [(link to model V30)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
-- Neural Networks with **Paragram** [(link to model V31)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
-- Neural Networks with **FastText** [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
+- Neural Networks with **Glove** word embedding [(link to model V30)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v30.py)
+- Neural Networks with **Paragram** word embedding [(link to model V31)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v31.py)
+- Neural Networks with **FastText** word embedding [(link to model V32)](https://github.com/KevinLiao159/Quora/blob/master/src/model_v32.py)
 
 
-6. 
+6. Try to use Attension layer with **Glove** word embedding [(link to model V40)](https://github.com/KevinLiao159/Quora/blob/v5/src/model_v40.py)
+
+7. Use both LSTM Attention and CapsNet [(link to model V5)](https://github.com/KevinLiao159/Quora/blob/v4/kernels/submission_v50.py) 
 
 
+## Kaggle Public LeaderBoard Ranking
+| model | public score | public leaderboard | 
+|---|---|---|---|
+| model V0 | 0.641 | 1600th (*top66%*)|
+| model V30 | 0.683 | 1075th (*top40%*)|
+| model V40 | 0.690 | 700th (*top28%*)|
+| model V50 | 0.697 | 91th (*top4%*)|
 
 
-## Kernals
+## Reference
 https://www.kaggle.com/fizzbuzz/beginner-s-guide-to-capsule-networks
 
 https://www.kaggle.com/ashishpatel26/nlp-text-analytics-solution-quora
