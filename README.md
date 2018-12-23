@@ -11,8 +11,9 @@
 ## Table of Contents
 - [Introduction](#introduction)
 - [Model Development](#model-development)
-- [Kaggle Public LB Ranking](#kaggle-public-lb-ranking)
+- [Kaggle Public LeaderBoard Ranking](#kaggle-public-leaderboard-ranking)
 - [Reference](#reference)
+
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
