@@ -77,7 +77,7 @@ I used a very similar neural network architecture like above. The only changes a
 | model V0 | 0.641 | 1600th (*top66%*)|
 | model V30 | 0.683 | 1075th (*top40%*)|
 | model V40 | 0.690 | 700th (*top28%*)|
-| model V50 | 0.697 | 91th (*top4%*)|
+| model V5 | 0.697 | 91th (*top4%*)|
 
 
 
